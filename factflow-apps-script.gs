@@ -17,7 +17,16 @@ function normalizeName(name) {
 
 function doPost(e) {
   try {
-    var data = JSON.parse(e.postData.contents);
+    // Accept JSON from fetch (application/json) or form POST (url-encoded)
+    var raw = '';
+    if (e.postData && e.postData.contents) {
+      raw = e.postData.contents;
+    } else if (e.parameter && e.parameter.json) {
+      raw = e.parameter.json;
+    } else {
+      return json({ ok: false, error: 'No data received. postData: ' + !!e.postData + ', param.json: ' + !!(e.parameter && e.parameter.json) });
+    }
+    var data = JSON.parse(raw);
     var studentName = normalizeName(data.studentName) || 'Unknown';
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
