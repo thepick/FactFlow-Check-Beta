@@ -1654,11 +1654,17 @@
       };
       fetch(url, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      }).then(function () {
-        showToast('Results sent.');
+      }).then(function (resp) {
+        return resp.json();
+      }).then(function (data) {
+        if (data && data.ok) {
+          showToast('Results sent.');
+        } else {
+          copySummary();
+          showToast('Server error. Results copied instead.');
+        }
       }).catch(function () {
         copySummary();
         showToast('Could not reach server. Results copied instead.');
