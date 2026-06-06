@@ -29,27 +29,41 @@
 5. Click **Authorize access** (Google will ask — safe, only accesses your Sheet)
 6. **Copy the URL** that appears. It looks like:
    ```
-   https://script.google.com/macros/s/ABC123xyz.../exec
+   https://script.google.com/macros/s/AKfycbyx.../exec
    ```
 7. Click **Done**
 
-### Step 4: Configure FactFlow Check Beta
+### Step 4: Add the URL to the HTML
 
-1. Open `index.html` in your browser
-2. Click the **Teacher** button (top right)
-3. Enter the teacher passphrase (default: `strawberry`)
-4. In the **Submit URL** field, paste the URL you copied
-5. Configure your assessment name and codes as usual
-6. Click **Save & Exit**
+1. Open `index.html` in a text editor (Notepad, VS Code, or any plain-text editor)
+2. Find the line near the top that says:
+   ```js
+   var SUBMIT_URL = 'https://script.google.com/macros/s/.../exec';
+   ```
+3. Replace the URL between the quotes with the URL you copied in Step 3
+4. Save the file
 
-### Step 5: Test
+### Step 5: Upload and test
 
-1. Enter a student name and a valid teacher code on the entry screen
-2. Complete a check
+1. Upload the updated `index.html` to your hosting (e.g., `ffcbeta.mtomlinson.ca`)
+2. Open the app, enter a student name and a valid teacher code, complete a check
 3. On the result screen, click **Send Results**
 4. Open your Google Sheet — you should see:
    - **Raw Data** sheet (hidden): every submission, timestamped
    - **Summary** sheet (visible): one row per student, alphabetical, showing only the latest result
+
+---
+
+## When you redeploy the Apps Script
+
+If you edit the Apps Script later, you must:
+
+1. Click **Deploy → New Deployment** (a new deployment, not just save)
+2. Copy the **new URL** it gives you
+3. Update the `SUBMIT_URL` in `index.html` with the new URL
+4. Re-upload `index.html`
+
+Each deployment gets a unique URL. The old URL stops working once a new deployment is created.
 
 ---
 
@@ -58,8 +72,7 @@
 | Student clicks... | What happens |
 |---|---|
 | **Send Results** | Posts their result to your Sheet. Row appears in Summary instantly. |
-| (no URL configured) | Falls back to copying results to clipboard. |
-| (offline / server error) | Falls back to clipboard with a toast message. |
+| (offline / server error) | Falls back to copying results to clipboard with a toast message. |
 
 ## Sheet structure
 
@@ -76,11 +89,14 @@
 
 ## Troubleshooting
 
-**"No submit URL configured" message:**
-The URL hasn't been saved yet. Go to Teacher panel, paste the URL, and click Save & Exit.
-
 **"Could not reach server" message:**
 Check that the student's device has internet. If they're offline, results are copied to clipboard — they can paste into an email later.
 
+**"Server error" message:**
+The Apps Script may have a bug. Go to Extensions → Apps Script in your Sheet, click **Executions** in the left sidebar, and look for errors. Redeploy after fixing.
+
 **Duplicate entries for the same student:**
 Name normalization handles case and spacing, but not typos (e.g., "Ben" vs "Bne"). Remind the student to correct their spelling — the name is remembered on their device for next time.
+
+**URL changed after redeploying:**
+If you redeploy the Apps Script, you get a new URL. You must update `SUBMIT_URL` in `index.html` and re-upload. The old URL stops working.

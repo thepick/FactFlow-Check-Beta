@@ -469,13 +469,6 @@
       return makeFact(fact.a, fact.b);
     }
 
-    function containsNumber(list, value) {
-      for (var i = 0; i < list.length; i++) {
-        if (list[i] === value) return true;
-      }
-      return false;
-    }
-
     function pad2(n) {
       return n < 10 ? '0' + n : String(n);
     }
@@ -721,13 +714,6 @@
       return arr;
     }
 
-    function getBandById(id) {
-      for (var i = 0; i < BANDS.length; i++) {
-        if (BANDS[i].id === id) return BANDS[i];
-      }
-      return null;
-    }
-
     function getBandIndex(id) {
       for (var i = 0; i < BANDS.length; i++) {
         if (BANDS[i].id === id) return i;
@@ -751,77 +737,40 @@
       return pool;
     }
 
-    function getOtherFactor(fact, band) {
-      if (containsNumber(band.tables, fact.a) && !containsNumber(band.tables, fact.b)) return fact.b;
-      if (containsNumber(band.tables, fact.b) && !containsNumber(band.tables, fact.a)) return fact.a;
-      if (containsNumber(band.tables, fact.a)) return fact.b;
-      return fact.a;
-    }
-
-    function difficultyBucket(fact, band) {
-      var other = getOtherFactor(fact, band);
-      if (other === 2 || other === 5 || other === 10 || other === 11) return 'easy';
-      if (band.tables.length === 1) {
-        if (fact.a === fact.b || other === 12) return 'hard';
-        return 'core';
-      }
-      if (fact.a === fact.b) return 'hard';
-      if (other === 6 || other === 7 || other === 8 || other === 9 || other === 12) return 'hard';
-      return 'core';
-    }
-
-    function chooseTargets(count, isExtra, band) {
-      if (band.id === 'H') return { easy: 4, core: 8, hard: 6 };
-      if (isExtra) return { easy: 1, core: 2, hard: 1 };
-      if (count <= FAST_TRACK_BLOCK_SIZE) return { easy: 1, core: 3, hard: 2 };
-      return { easy: 2, core: 4, hard: 2 };
-    }
-
-    function pushUnique(target, fact, used) {
-      if (!fact || used[fact.familyKey]) return false;
-      used[fact.familyKey] = true;
-      target.push(fact);
-      return true;
-    }
-
-    function pickFromBucket(bucket, count, used) {
-      var picks = [];
-      var shuffled = shuffle(bucket);
-      for (var i = 0; i < shuffled.length && picks.length < count; i++) {
-        pushUnique(picks, shuffled[i], used);
-      }
-      return picks;
-    }
-
     function selectBandQuestions(band, count, isExtra) {
       var pool = generateBandPool(band);
       var session = appState.session;
       var used = {};
-      var i;
       if (session) {
-        for (i = 0; i < session.questionResults.length; i++) used[session.questionResults[i].familyKey] = true;
+        for (var i = 0; i < session.questionResults.length; i++) used[session.questionResults[i].familyKey] = true;
         for (i = 0; i < session.blockQueue.length; i++) used[session.blockQueue[i].familyKey] = true;
       }
-      var buckets = { easy: [], core: [], hard: [] };
-      for (i = 0; i < pool.length; i++) buckets[difficultyBucket(pool[i], band)].push(pool[i]);
-      var targets = chooseTargets(count, isExtra, band);
+      // Shuffle the full pool, then pick unique facts that haven't been used
+      var shuffled = shuffle(pool);
       var picked = [];
-      var localUsed = {};
-      var levels = ['easy','core','hard'];
-      for (i = 0; i < levels.length; i++) {
-        var level = levels[i];
-        var levelPicks = pickFromBucket(buckets[level], targets[level], used);
-        for (var p = 0; p < levelPicks.length; p++) pushUnique(picked, levelPicks[p], localUsed);
+      for (i = 0; i < shuffled.length && picked.length < count; i++) {
+        if (!used[shuffled[i].familyKey]) {
+          used[shuffled[i].familyKey] = true;
+          picked.push(shuffled[i]);
+        }
       }
-      var fillPool = shuffle(pool);
-      for (i = 0; i < fillPool.length && picked.length < count; i++) {
-        if (!used[fillPool[i].familyKey]) pushUnique(picked, fillPool[i], localUsed);
-      }
+      // If we still need more (pool exhausted), pick from the full pool allowing repeats
       if (picked.length < count) {
-        fillPool = shuffle(pool);
-        for (i = 0; i < fillPool.length && picked.length < count; i++) pushUnique(picked, fillPool[i], localUsed);
+        var remaining = shuffle(pool);
+        for (i = 0; i < remaining.length && picked.length < count; i++) {
+          if (!used[remaining[i].familyKey]) {
+            used[remaining[i].familyKey] = true;
+            picked.push(remaining[i]);
+          }
+        }
       }
-      picked = shuffle(picked).slice(0, count);
+      // Final safety net: if STILL short (very unlikely), allow any fact
+      if (picked.length < count) {
+        var all = shuffle(pool);
+        for (i = 0; i < all.length && picked.length < count; i++) {
+          picked.push(all[i]);
+        }
+      }
       return smoothQuestionOrder(picked);
     }
 
