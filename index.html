@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167x167.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>FactFlow Check Beta</title>
+  <style>
+    :root {
+      --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #f7f6f2;
+      --surface: #fbfaf7;
+      --surface-2: #f0ede8;
+      --border: #d5d0c8;
+      --text: #27231d;
+      --muted: #68635d;
+      --faint: #969088;
+      --primary: #3b6fb6;
+      --primary-dark: #27538f;
+      --primary-soft: #d9e6f8;
+      --success: #437a22;
+      --success-soft: #dcebd2;
+      --warning: #b77900;
+      --warning-soft: #f0e1bf;
+      --danger: #a12c7b;
+      --danger-soft: #ead4e1;
+      --shadow: 0 4px 14px rgba(30, 25, 15, 0.08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: none; text-size-adjust: none; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font-body); line-height: 1.45; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.45; }
+    input, select { width: 100%; min-height: 44px; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 0.65rem 0.8rem; }
+    h1, h2, h3, p { margin: 0; }
+    .app { max-width: 920px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
+    .header { border-radius: var(--radius); padding: 14px 16px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; box-shadow: var(--shadow); display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 42px; height: 42px; display: block; flex: 0 0 42px; }
+    .logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+    .brand h1 { font-size: 1.25rem; line-height: 1.05; }
+    .brand .subtitle { display: block; font-size: 0.78rem; font-weight: 500; opacity: 0.86; margin-top: 2px; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+    .grid { display: grid; gap: 14px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .field { display: grid; gap: 5px; }
+    .field label { color: var(--muted); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    .muted { color: var(--muted); font-size: 0.94rem; }
+    .small { font-size: 0.84rem; }
+    .center { text-align: center; }
+    .btn { border: 0; border-radius: 10px; padding: 0.72rem 1rem; background: var(--primary); color: white; font-weight: 800; min-height: 44px; }
+    .btn:hover { background: var(--primary-dark); }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn.secondary:hover { background: var(--surface-2); }
+    .btn.warning { background: var(--warning); color: #1e1605; }
+    .btn.danger { background: var(--danger); }
+    .notice { border-radius: 12px; padding: 12px; background: var(--primary-soft); color: var(--text); border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); }
+    .error { display: none; border-radius: 12px; padding: 10px 12px; background: var(--danger-soft); color: var(--danger); font-weight: 800; }
+    .error.show { display: block; }
+    .entry-card { max-width: 520px; margin: 0 auto; }
+    .code-chip { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0.2rem 0.75rem; border-radius: 999px; font-weight: 900; letter-spacing: 0.08em; color: var(--primary); background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); }
+    .test-meta { display: flex; justify-content: space-between; gap: 10px; align-items: center; color: var(--muted); font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+    .band-track { display: flex; justify-content: center; gap: 5px; margin: 10px 0 6px; }
+    .band-dot { width: 11px; height: 11px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+    .band-dot.passed { background: var(--success); border-color: var(--success); }
+    .band-dot.current { background: var(--primary); border-color: var(--primary); transform: scale(1.28); }
+    .band-dot.failed { background: var(--danger); border-color: var(--danger); }
+    .problem-area { text-align: center; padding: 16px 0 10px; }
+    .problem-text { font-size: clamp(2.6rem, 9vw, 5.2rem); font-weight: 900; letter-spacing: -0.04em; }
+    .answer-wrap { max-width: 280px; margin: 0 auto; }
+    .answer-input { text-align: center; font-size: clamp(1.7rem, 6vw, 3rem); font-weight: 900; min-height: 70px; background: var(--surface); }
+    .answer-input.good { border-color: var(--success); box-shadow: 0 0 0 8px color-mix(in srgb, var(--success) 22%, transparent); }
+    .answer-input.bad { border-color: var(--danger); box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 20%, transparent); }
+    .answer-input.warn { border-color: var(--warning); box-shadow: 0 0 0 8px color-mix(in srgb, var(--warning) 22%, transparent); }
+    .keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; max-width: 420px; margin: 14px auto 0; }
+    .key-btn { min-height: 52px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); font-weight: 900; font-size: 1.12rem; user-select: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .key-btn:hover { filter: brightness(0.98); }
+    .key-btn.action { color: var(--primary); background: var(--primary-soft); font-size: 0.95rem; }
+    .timer-bar { height: 8px; border-radius: 999px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); margin-top: 12px; }
+    .timer-fill { height: 100%; width: 100%; background: var(--primary); transform-origin: left center; transition: width 180ms linear, background 180ms linear; }
+    .timer-fill.warn { background: var(--warning); }
+    .timer-fill.danger { background: var(--danger); }
+    .status-line { min-height: 26px; text-align: center; margin-top: 10px; font-weight: 800; color: var(--muted); }
+    .status-line.good { color: var(--success); }
+    .status-line.bad { color: var(--danger); }
+    .status-line.warn { color: var(--warning); }
+    .result-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .result-card { border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); padding: 14px; text-align: center; }
+    .result-card .label { color: var(--muted); font-size: 0.76rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; }
+    .result-card .value { font-size: 1.4rem; font-weight: 900; margin-top: 3px; }
+    .result-card.verified { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-soft); }
+    .result-card.developing { border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); background: var(--warning-soft); }
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .stat { border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); padding: 9px; text-align: center; }
+    .stat .label { color: var(--muted); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+    .stat .value { font-weight: 900; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { border-radius: 999px; padding: 0.25rem 0.55rem; font-weight: 900; font-size: 0.78rem; background: var(--surface-2); border: 1px solid var(--border); }
+    .tag.bad { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+    .tag.warn { background: var(--warning-soft); color: var(--warning); border-color: color-mix(in srgb, var(--warning) 35%, var(--border)); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; border-bottom: 1px solid var(--border); padding: 0.48rem 0.35rem; vertical-align: top; }
+    th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .history-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .toast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%) translateY(-8px); opacity: 0; transition: opacity 180ms, transform 180ms; z-index: 10; padding: 0.65rem 1rem; border-radius: 999px; background: var(--text); color: var(--bg); font-weight: 900; box-shadow: var(--shadow); pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .hidden { display: none !important; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--surface-2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin: auto 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, 0.38); display: grid; place-items: center; padding: 16px; }
+    .modal-card { width: min(420px, 100%); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+    @media (max-width: 720px) {
+      .app { padding: 10px; }
+      .header { align-items: flex-start; }
+      .two-col, .result-cards { grid-template-columns: 1fr; }
+      .stat-row { grid-template-columns: repeat(2, 1fr); }
+      .header-actions .btn { padding: 0.55rem 0.7rem; font-size: 0.84rem; }
+      .key-btn { min-height: 48px; }
+    }
+
+    /* Countdown overlay */
+    #testScreen .panel { position: relative; overflow: hidden; }
+    .countdown-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 80;
+      place-items: center;
+      pointer-events: none;
+      background: color-mix(in srgb, var(--surface) 72%, transparent);
+      backdrop-filter: blur(2px);
+    }
+    .countdown-overlay.active { display: grid; }
+    .countdown-card {
+      min-width: 140px;
+      padding: 1rem 1.35rem;
+      text-align: center;
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      border: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+      box-shadow: var(--shadow);
+    }
+    .countdown-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+    .countdown-number {
+      margin-top: 0.25rem;
+      font-size: clamp(3rem, 14vw, 5.5rem);
+      line-height: 1;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -0.06em;
+      animation: countdownPop 300ms ease;
+    }
+    @keyframes countdownPop {
+      0% { transform: scale(0.78); opacity: 0; }
+      70% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"><img src="app-logo.png" alt=""></div>
+        <div>
+          <h1>FactFlow Check Beta <span class="subtitle">Smart placement · Beta</span></h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn secondary" type="button" id="teacherBtn">Teacher</button>
+      </div>
+    </header>
+
+    <section class="screen active" id="entryScreen">
+      <div class="panel entry-card grid">
+        <div class="center grid">
+          <h2>Welcome to FactFlow Check Beta</h2>
+          <p class="muted">Answer each fact as quickly and accurately as you can. When you finish, your result will appear on the screen.</p>
+          <div><span class="code-chip" id="studentCodeHint">Code required</span></div>
+        </div>
+        <div class="field">
+          <label for="studentName">Your name</label>
+          <input id="studentName" type="text" maxlength="40" autocomplete="off" placeholder="First name">
+        </div>
+        <div class="field">
+          <label for="teacherCode">Teacher code</label>
+          <input id="teacherCode" type="text" maxlength="24" autocomplete="off" placeholder="Example: SAMPLE-00" style="letter-spacing:0.05em;" oninput="this.value = this.value.toUpperCase();">
+        </div>
+        <div class="error" id="entryError"></div>
+        <button class="btn" type="button" id="beginBtn">Begin Check</button>
+        <p class="muted small center">This check uses a one-code-per-attempt lock on this device. Restarted attempts are marked on the result screen.</p>
+      </div>
+    </section>
+
+    <section class="screen" id="testScreen">
+      <div class="panel">
+        <div class="countdown-overlay" id="countdownOverlay" aria-live="assertive" aria-hidden="true">
+          <div class="countdown-card">
+            <div class="countdown-label" id="countdownLabel">Get ready</div>
+            <div class="countdown-number" id="countdownValue">3</div>
+          </div>
+        </div>
+        <div class="test-meta">
+          <span>Question <span id="qNumber">1</span><span id="qTotal"></span></span>
+          <span id="testStudentLabel">Student</span>
+        </div>
+        <div class="band-track" id="bandTrack" aria-hidden="true"></div>
+        <div class="timer-bar" aria-hidden="true"><div class="timer-fill" id="timerFill"></div></div>
+        <div class="problem-area" aria-live="polite">
+          <div class="problem-text" id="problemText">Ready?</div>
+        </div>
+        <div class="answer-wrap">
+          <input id="answerInput" class="answer-input" inputmode="none" readonly autocomplete="off" maxlength="3" placeholder="?" aria-label="Answer">
+        </div>
+        <div class="keypad" aria-label="Number keypad">
+          <button class="key-btn" type="button" data-key="1">1</button>
+          <button class="key-btn" type="button" data-key="2">2</button>
+          <button class="key-btn" type="button" data-key="3">3</button>
+          <button class="key-btn" type="button" data-key="4">4</button>
+          <button class="key-btn" type="button" data-key="5">5</button>
+          <button class="key-btn" type="button" data-key="6">6</button>
+          <button class="key-btn" type="button" data-key="7">7</button>
+          <button class="key-btn" type="button" data-key="8">8</button>
+          <button class="key-btn" type="button" data-key="9">9</button>
+          <button class="key-btn action" type="button" data-key="clear">Clear</button>
+          <button class="key-btn" type="button" data-key="0">0</button>
+          <button class="key-btn action" type="button" data-key="backspace">Back</button>
+        </div>
+        <div class="status-line" id="statusLine" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="screen" id="completeScreen">
+      <div class="panel center grid">
+        <h2>Check complete</h2>
+        <p class="muted">Please show your teacher.</p>
+        <div class="notice"><strong>Raise your hand and wait quietly.</strong></div>
+        <div class="row" style="justify-content:center;">
+          <button class="btn" type="button" id="showTeacherResultBtn">Teacher Result</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="resultScreen">
+      <div class="panel grid">
+        <div class="center grid">
+          <h2>FactFlow Check Result</h2>
+          <p class="muted" id="resultMeta">Student - Code - Date</p>
+        </div>
+        <div class="result-cards">
+          <div class="result-card verified">
+            <div class="label">Verified Level</div>
+            <div class="value" id="verifiedLevel">-</div>
+            <p class="muted small" id="verifiedDesc"></p>
+          </div>
+          <div class="result-card developing">
+            <div class="label">Developing Level</div>
+            <div class="value" id="developingLevel">-</div>
+            <p class="muted small" id="developingDesc"></p>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="label">Accuracy</div><div class="value" id="accuracyStat">-</div></div>
+          <div class="stat"><div class="label">Fluent</div><div class="value" id="fluentStat">-</div></div>
+          <div class="stat"><div class="label">Slow</div><div class="value" id="slowStat">-</div></div>
+          <div class="stat"><div class="label">Missed</div><div class="value" id="missedStat">-</div></div>
+        </div>
+        <div class="grid">
+          <h3>Recommendation</h3>
+          <div class="notice" id="recommendationText">-</div>
+        </div>
+        <div class="two-col">
+          <div class="grid">
+            <h3>Missed facts</h3>
+            <div class="tag-list" id="missedTags"></div>
+          </div>
+          <div class="grid">
+            <h3>Timed out facts</h3>
+            <div class="tag-list" id="timeoutTags"></div>
+          </div>
+        </div>
+        <div class="grid">
+          <h3>Band summary</h3>
+          <div id="bandSummary"></div>
+        </div>
+        <div class="row" style="justify-content:center;gap:10px;">
+          <button class="btn" type="button" id="submitResultBtn">Send Results</button>
+          <span class="spinner hidden" id="submitSpinner"></span>
+          <button class="btn secondary" type="button" id="studentViewBtn">Done</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="teacherScreen">
+      <div class="panel grid">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <h2>Teacher Tools</h2>
+            <p class="muted">Configure the assessment and review saved results.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label for="assessmentName">Assessment name</label>
+          <input id="assessmentName" type="text" maxlength="60" placeholder="Example: Term 1 Multiplication Check">
+        </div>
+        <div class="field">
+          <label for="submitUrl">Submit URL (Google Apps Script)</label>
+          <input id="submitUrl" type="text" maxlength="300" placeholder="https://script.google.com/macros/s/...">
+        </div>
+        <div class="notice">
+          <div class="row" style="justify-content:space-between;align-items:center;">
+            <span class="small muted" style="font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">Current 4-hour code</span>
+            <span class="code-chip" id="dailyCodeLabel">-</span>
+          </div>
+          <p class="muted small" id="codeWindowLabel" style="margin-top:6px;">Valid until … Bangkok time.</p>
+        </div>
+        <div class="field">
+          <label for="customCode">Custom code (optional)</label>
+          <div class="row">
+            <input id="customCode" type="text" maxlength="24" placeholder="Leave blank or use Generate" style="flex:1;text-transform:uppercase;letter-spacing:0.05em;">
+            <button class="btn secondary" type="button" id="generateCodeBtn">Generate</button>
+          </div>
+        </div>
+        <div class="history-wrap"><table id="historyTable"></table></div>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn secondary" type="button" id="clearResultsBtn">Clear All Results</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="teacherUnlockModal" role="dialog" aria-modal="true" aria-labelledby="teacherUnlockTitle">
+    <div class="modal-card grid">
+      <div>
+        <h2 id="teacherUnlockTitle">Teacher Access</h2>
+        <p class="muted">Enter the teacher passphrase to open the teacher area.</p>
+      </div>
+      <div class="field">
+        <label for="teacherPassphrase">Teacher passphrase</label>
+        <input id="teacherPassphrase" type="password" maxlength="64" autocomplete="off">
+      </div>
+      <div class="error" id="teacherUnlockError"></div>
+      <div class="row" style="justify-content:flex-end;">
+        <button class="btn secondary" type="button" id="cancelTeacherUnlockBtn">Cancel</button>
+        <button class="btn" type="button" id="unlockTeacherBtn">Unlock</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var APP_VERSION = '2.6.0-beta';
+    var RESULTS_KEY = 'factflowBeta.results.v1';
+    var ATTEMPTS_KEY = 'factflowBeta.attempts.v1';
+    var CONFIG_KEY = 'factflowBeta.config.v1';
+    var TIMEOUT_SEC = 10;
+    var MAX_TEST_SEC = 400;
+    var MAX_QUESTIONS = 60;
+    var MIN_QUESTIONS = 12;
+    var FAST_TRACK_BLOCK_SIZE = 6;
+    var FLUENT_MS = 4000;
+    var SLOW_MS = 8000;
+    var AUTO_SUBMIT_MS = 120;
+    var IDLE_SUBMIT_SHORT_MS = 500;
+    var IDLE_SUBMIT_LONG_MS = 700;
+    var MAX_RETESTS_PER_BAND = 4;
+    var EARLY_FAIL_MIN_BAND_ANSWERS = 6;
+    var TEACHER_PASS_SALT = 'ffc-teacher-lock-v1';
+    var TEACHER_PASS_HASH = '99691dcd1e9a5a4c574211307202ecd2caea10dc19f8962772935960184ff11d';
+    var TEACHER_AUTO_LOCK_MS = 15 * 60 * 1000;
+    var RESERVED_EXAMPLE_CODES = ['SAMPLE-00'];
+
+    var WARMUP = [
+      makeFact(2, 4), makeFact(5, 6), makeFact(10, 7),
+      makeFact(3, 3), makeFact(4, 2), makeFact(2, 9)
+    ];
+
+    var BANDS = [
+      { id: 'A', label: '2s, 5s, 10s', tables: [2, 5, 10], blockSize: 8, extraSize: 4 },
+      { id: 'B', label: '3s, 4s', tables: [3, 4], blockSize: 8, extraSize: 4 },
+      { id: 'C', label: '6s', tables: [6], blockSize: 8, extraSize: 4 },
+      { id: 'D', label: '7s', tables: [7], blockSize: 8, extraSize: 4 },
+      { id: 'E', label: '8s', tables: [8], blockSize: 8, extraSize: 4 },
+      { id: 'F', label: '9s', tables: [9], blockSize: 8, extraSize: 4 },
+      { id: 'G', label: '11s, 12s', tables: [11, 12], blockSize: 8, extraSize: 4 },
+      { id: 'H', label: 'Mixed 2-12', tables: [2,3,4,5,6,7,8,9,10,11,12], blockSize: 18, extraSize: 0 }
+    ];
+
+    var el = {};
+    var appState = {
+      config: null,
+      results: [],
+      attempts: {},
+      session: null,
+      currentQuestion: null,
+      questionStartedAt: 0,
+      inputLocked: false,
+      finishing: false,
+      autoSubmitId: null,
+      idleSubmitId: null,
+      questionTimerId: null,
+      nextQuestionId: null,
+      timerIntervalId: null,
+      latestResult: null,
+      teacherUnlocked: false,
+      teacherLockTimerId: null,
+      pendingTeacherTarget: ''
+    };
+
+    function cacheDom() {
+      var ids = [
+        'entryScreen','testScreen','completeScreen','resultScreen','teacherScreen','teacherBtn',
+        'studentCodeHint','studentName','teacherCode','entryError','beginBtn','qNumber','qTotal','testStudentLabel',
+        'bandTrack','timerFill','problemText','answerInput','statusLine','showTeacherResultBtn','resultMeta',
+        'verifiedLevel','verifiedDesc','developingLevel','developingDesc','accuracyStat','fluentStat','slowStat',
+        'missedStat','recommendationText','missedTags','timeoutTags','bandSummary','studentViewBtn',
+        'assessmentName','customCode','generateCodeBtn','submitUrl','dailyCodeLabel',
+        'codeWindowLabel','clearResultsBtn','historyTable','teacherUnlockModal','teacherPassphrase','teacherUnlockError',
+        'cancelTeacherUnlockBtn','unlockTeacherBtn','toast','countdownOverlay','countdownLabel','countdownValue',
+        'submitResultBtn','submitSpinner'
+      ];
+      for (var i = 0; i < ids.length; i++) el[ids[i]] = document.getElementById(ids[i]);
+    }
+
+    function makeFact(a, b) {
+      var left = parseInt(a, 10);
+      var right = parseInt(b, 10);
+      return {
+        a: left,
+        b: right,
+        answer: left * right,
+        familyKey: makeFamilyKey(left, right),
+        display: left + ' x ' + right
+      };
+    }
+
+    function makeFamilyKey(a, b) {
+      var x = parseInt(a, 10);
+      var y = parseInt(b, 10);
+      if (x <= y) return x + 'x' + y;
+      return y + 'x' + x;
+    }
+
+    function reverseFact(fact) {
+      return makeFact(fact.b, fact.a);
+    }
+
+    function cloneFact(fact) {
+      return makeFact(fact.a, fact.b);
+    }
+
+    function containsNumber(list, value) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i] === value) return true;
+      }
+      return false;
+    }
+
+    function pad2(n) {
+      return n < 10 ? '0' + n : String(n);
+    }
+
+    function bangkokDate(date) {
+      var d = date || new Date();
+      var utcMs = d.getTime() + (d.getTimezoneOffset() * 60000);
+      return new Date(utcMs + (7 * 60 * 60000));
+    }
+
+    function fourHourCodeInfo(date) {
+      var d = bangkokDate(date || new Date());
+      var block = Math.floor(d.getHours() / 4);
+      var seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+      var words = ['RIVER','MAPLE','CHECK','BLUE','NORTH','BRAVE','CLOUD','TIGER','LEAF','STAR','FACT','READY','STORM','FLAME','STONE','CREEK','LIGHT','SHINE','OCEAN','PEARL','BLOOM','PLAIN','SWIFT','CROWN'];
+      var word = words[(seed + block * 5) % words.length];
+      var num = ((seed * 19 + block * 37) % 90) + 10;
+      var expiresHour = (block + 1) * 4;
+      var expiresLabel = pad2(expiresHour % 24) + ':00';
+      return { code: word + '-' + num, expiresLabel: expiresLabel, block: block };
+    }
+
+    function currentStudentCode() {
+      return fourHourCodeInfo(new Date()).code;
+    }
+
+    function normalizeCode(code) {
+      return String(code || '').toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9-]/g, '');
+    }
+
+    function isReservedExampleCode(code) {
+      var clean = normalizeCode(code);
+      for (var i = 0; i < RESERVED_EXAMPLE_CODES.length; i++) {
+        if (clean === RESERVED_EXAMPLE_CODES[i]) return true;
+      }
+      return false;
+    }
+
+    function safeJsonParse(value, fallback) {
+      try { return JSON.parse(value); } catch (e) { return fallback; }
+    }
+
+    function loadJson(key, fallback) {
+      try {
+        var raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return safeJsonParse(raw, fallback);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function saveJson(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { showToast('Could not save locally.'); }
+    }
+
+    function loadConfig() {
+      var cfg = loadJson(CONFIG_KEY, null);
+      if (!cfg || typeof cfg !== 'object') {
+        cfg = { assessmentName: 'Multiplication Placement Check', customCode: '', updatedAt: new Date().toISOString() };
+      }
+      if (!cfg.assessmentName) cfg.assessmentName = 'Multiplication Placement Check';
+      if (!cfg.customCode) cfg.customCode = '';
+      if (!cfg.submitUrl) cfg.submitUrl = '';
+      return cfg;
+    }
+
+    function saveConfig() {
+      appState.config.assessmentName = String(el.assessmentName.value || 'Multiplication Placement Check').trim();
+      appState.config.customCode = normalizeCode(el.customCode.value || '');
+      if (isReservedExampleCode(appState.config.customCode)) {
+        appState.config.customCode = '';
+        el.customCode.value = '';
+        showToast('The sample code is reserved and was not saved.');
+      }
+      appState.config.updatedAt = new Date().toISOString();
+      appState.config.submitUrl = String(el.submitUrl.value || '').trim();
+      saveJson(CONFIG_KEY, appState.config);
+      renderConfig();
+      showToast('Saved.');
+    }
+
+    function renderConfig() {
+      var codeInfo = fourHourCodeInfo(new Date());
+      el.dailyCodeLabel.textContent = codeInfo.code;
+      if (el.codeWindowLabel) {
+        el.codeWindowLabel.textContent = 'Valid until ' + codeInfo.expiresLabel + ' Bangkok time. A new code is created every 4 hours.';
+      }
+      el.assessmentName.value = appState.config.assessmentName || '';
+      el.customCode.value = normalizeCode(appState.config.customCode || '');
+      el.submitUrl.value = appState.config.submitUrl || '';
+      el.studentCodeHint.textContent = 'Ask your teacher for the code';
+    }
+
+    function isCodeAccepted(code) {
+      var clean = normalizeCode(code);
+      var configured = normalizeCode(appState.config.customCode || '');
+      if (!clean) return false;
+      if (isReservedExampleCode(clean)) return false;
+      if (configured && clean === configured) return true;
+      if (clean === currentStudentCode()) return true;
+      return false;
+    }
+
+    function getAttemptKey(code) {
+      return normalizeCode(code) + '|' + String(appState.config.assessmentName || '').toLowerCase();
+    }
+
+    function openTeacherUnlock(targetScreen) {
+      appState.pendingTeacherTarget = targetScreen || 'teacherScreen';
+      el.teacherUnlockError.textContent = '';
+      el.teacherUnlockError.classList.remove('show');
+      el.teacherPassphrase.value = '';
+      el.teacherUnlockModal.classList.remove('hidden');
+      window.setTimeout(function () { el.teacherPassphrase.focus(); }, 30);
+    }
+
+    function closeTeacherUnlock() {
+      el.teacherUnlockModal.classList.add('hidden');
+      el.teacherPassphrase.value = '';
+      el.teacherUnlockError.textContent = '';
+      el.teacherUnlockError.classList.remove('show');
+    }
+
+    function showTeacherUnlockError(message) {
+      el.teacherUnlockError.textContent = message;
+      el.teacherUnlockError.classList.add('show');
+    }
+
+    function hexFromBuffer(buffer) {
+      var bytes = new Uint8Array(buffer);
+      var out = '';
+      for (var i = 0; i < bytes.length; i++) {
+        var hex = bytes[i].toString(16);
+        if (hex.length < 2) hex = '0' + hex;
+        out += hex;
+      }
+      return out;
+    }
+
+    function hashTeacherPassphrase(passphrase) {
+      if (!window.crypto || !window.crypto.subtle || typeof TextEncoder === 'undefined') {
+        return Promise.reject(new Error('Crypto unavailable'));
+      }
+      var encoder = new TextEncoder();
+      var input = encoder.encode(TEACHER_PASS_SALT + '|' + String(passphrase || ''));
+      return window.crypto.subtle.digest('SHA-256', input).then(function (hash) {
+        return hexFromBuffer(hash);
+      });
+    }
+
+    function verifyTeacherPassphrase() {
+      var passphrase = String(el.teacherPassphrase.value || '');
+      if (!passphrase) { showTeacherUnlockError('Please enter the teacher passphrase.'); return; }
+      hashTeacherPassphrase(passphrase).then(function (hash) {
+        if (hash === TEACHER_PASS_HASH) {
+          unlockTeacherArea(appState.pendingTeacherTarget || 'teacherScreen');
+        } else {
+          showTeacherUnlockError('That passphrase did not work.');
+        }
+      }).catch(function (e) {
+        showTeacherUnlockError('Teacher lock requires HTTPS or localhost.');
+      });
+    }
+
+    function unlockTeacherArea(targetScreen) {
+      appState.teacherUnlocked = true;
+      closeTeacherUnlock();
+      resetTeacherAutoLock();
+      el.teacherBtn.textContent = 'Save & Exit';
+      el.teacherBtn.className = 'btn warning';
+      if (targetScreen === 'resultScreen' && appState.latestResult) {
+        renderResult(appState.latestResult);
+        showScreen('resultScreen');
+      } else {
+        renderHistory();
+        showScreen('teacherScreen');
+      }
+      showToast('Teacher area unlocked.');
+    }
+
+    function lockTeacherArea() {
+      appState.teacherUnlocked = false;
+      if (appState.teacherLockTimerId) {
+        window.clearTimeout(appState.teacherLockTimerId);
+        appState.teacherLockTimerId = null;
+      }
+      el.teacherBtn.textContent = 'Teacher';
+      el.teacherBtn.className = 'btn secondary';
+      if (!appState.session) showScreen('entryScreen');
+      showToast('Teacher area locked.');
+    }
+
+    function resetTeacherAutoLock() {
+      if (appState.teacherLockTimerId) window.clearTimeout(appState.teacherLockTimerId);
+      appState.teacherLockTimerId = window.setTimeout(function () {
+        if (appState.teacherUnlocked) lockTeacherArea();
+      }, TEACHER_AUTO_LOCK_MS);
+    }
+
+    function requireTeacherAccess(targetScreen) {
+      if (appState.teacherUnlocked) {
+        resetTeacherAutoLock();
+        if (targetScreen === 'resultScreen') {
+          if (appState.latestResult) { renderResult(appState.latestResult); showScreen('resultScreen'); }
+        } else {
+          renderHistory();
+          showScreen('teacherScreen');
+        }
+        return;
+      }
+      openTeacherUnlock(targetScreen);
+    }
+
+    function showScreen(id) {
+      var screens = ['entryScreen','testScreen','completeScreen','resultScreen','teacherScreen'];
+      for (var i = 0; i < screens.length; i++) {
+        if (el[screens[i]]) el[screens[i]].classList.toggle('active', screens[i] === id);
+      }
+    }
+
+    function showError(message) {
+      el.entryError.textContent = message;
+      el.entryError.classList.add('show');
+    }
+
+    function clearError() {
+      el.entryError.textContent = '';
+      el.entryError.classList.remove('show');
+    }
+
+    function showToast(message) {
+      el.toast.textContent = message;
+      el.toast.classList.add('show');
+      window.setTimeout(function () { el.toast.classList.remove('show'); }, 1800);
+    }
+
+    function shuffle(items) {
+      var arr = items.slice();
+      for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function getBandById(id) {
+      for (var i = 0; i < BANDS.length; i++) {
+        if (BANDS[i].id === id) return BANDS[i];
+      }
+      return null;
+    }
+
+    function getBandIndex(id) {
+      for (var i = 0; i < BANDS.length; i++) {
+        if (BANDS[i].id === id) return i;
+      }
+      return -1;
+    }
+
+    function generateBandPool(band) {
+      var pool = [];
+      var seen = {};
+      for (var i = 0; i < band.tables.length; i++) {
+        var table = band.tables[i];
+        for (var n = 2; n <= 12; n++) {
+          var fact = makeFact(table, n);
+          if (!seen[fact.familyKey]) {
+            seen[fact.familyKey] = true;
+            pool.push(fact);
+          }
+        }
+      }
+      return pool;
+    }
+
+    function getOtherFactor(fact, band) {
+      if (containsNumber(band.tables, fact.a) && !containsNumber(band.tables, fact.b)) return fact.b;
+      if (containsNumber(band.tables, fact.b) && !containsNumber(band.tables, fact.a)) return fact.a;
+      if (containsNumber(band.tables, fact.a)) return fact.b;
+      return fact.a;
+    }
+
+    function difficultyBucket(fact, band) {
+      var other = getOtherFactor(fact, band);
+      if (other === 2 || other === 5 || other === 10 || other === 11) return 'easy';
+      if (band.tables.length === 1) {
+        if (fact.a === fact.b || other === 12) return 'hard';
+        return 'core';
+      }
+      if (fact.a === fact.b) return 'hard';
+      if (other === 6 || other === 7 || other === 8 || other === 9 || other === 12) return 'hard';
+      return 'core';
+    }
+
+    function chooseTargets(count, isExtra, band) {
+      if (band.id === 'H') return { easy: 4, core: 8, hard: 6 };
+      if (isExtra) return { easy: 1, core: 2, hard: 1 };
+      if (count <= FAST_TRACK_BLOCK_SIZE) return { easy: 1, core: 3, hard: 2 };
+      return { easy: 2, core: 4, hard: 2 };
+    }
+
+    function pushUnique(target, fact, used) {
+      if (!fact || used[fact.familyKey]) return false;
+      used[fact.familyKey] = true;
+      target.push(fact);
+      return true;
+    }
+
+    function pickFromBucket(bucket, count, used) {
+      var picks = [];
+      var shuffled = shuffle(bucket);
+      for (var i = 0; i < shuffled.length && picks.length < count; i++) {
+        pushUnique(picks, shuffled[i], used);
+      }
+      return picks;
+    }
+
+    function selectBandQuestions(band, count, isExtra) {
+      var pool = generateBandPool(band);
+      var session = appState.session;
+      var used = {};
+      var i;
+      if (session) {
+        for (i = 0; i < session.questionResults.length; i++) used[session.questionResults[i].familyKey] = true;
+        for (i = 0; i < session.blockQueue.length; i++) used[session.blockQueue[i].familyKey] = true;
+      }
+      var buckets = { easy: [], core: [], hard: [] };
+      for (i = 0; i < pool.length; i++) buckets[difficultyBucket(pool[i], band)].push(pool[i]);
+      var targets = chooseTargets(count, isExtra, band);
+      var picked = [];
+      var localUsed = {};
+      var levels = ['easy','core','hard'];
+      for (i = 0; i < levels.length; i++) {
+        var level = levels[i];
+        var levelPicks = pickFromBucket(buckets[level], targets[level], used);
+        for (var p = 0; p < levelPicks.length; p++) pushUnique(picked, levelPicks[p], localUsed);
+      }
+      var fillPool = shuffle(pool);
+      for (i = 0; i < fillPool.length && picked.length < count; i++) {
+        if (!used[fillPool[i].familyKey]) pushUnique(picked, fillPool[i], localUsed);
+      }
+      if (picked.length < count) {
+        fillPool = shuffle(pool);
+        for (i = 0; i < fillPool.length && picked.length < count; i++) pushUnique(picked, fillPool[i], localUsed);
+      }
+      picked = shuffle(picked).slice(0, count);
+      return smoothQuestionOrder(picked);
+    }
+
+    function smoothQuestionOrder(questions) {
+      var remaining = questions.slice();
+      var ordered = [];
+      var lastFamily = '';
+      while (remaining.length) {
+        var chosenIndex = 0;
+        for (var i = 0; i < remaining.length; i++) {
+          if (remaining[i].familyKey !== lastFamily) { chosenIndex = i; break; }
+        }
+        var fact = remaining.splice(chosenIndex, 1)[0];
+        if (Math.random() < 0.35) fact = reverseFact(fact);
+        ordered.push(fact);
+        lastFamily = fact.familyKey;
+      }
+      return ordered;
+    }
+
+    var countdownTimerId = null;
+
+    function showCountdown(value, label) {
+      el.countdownValue.textContent = String(value);
+      el.countdownLabel.textContent = label || 'Get ready';
+      el.countdownOverlay.classList.add('active');
+      el.countdownOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideCountdown() {
+      if (countdownTimerId) { window.clearInterval(countdownTimerId); countdownTimerId = null; }
+      el.countdownOverlay.classList.remove('active');
+      el.countdownOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function runCountdown(onDone) {
+      var remaining = 3;
+      el.answerInput.disabled = true;
+      showCountdown(remaining, 'Get ready');
+
+      countdownTimerId = window.setInterval(function () {
+        remaining--;
+        if (remaining > 0) {
+          showCountdown(remaining, 'Get ready');
+          return;
+        }
+        if (remaining === 0) {
+          showCountdown('Go!', '');
+          return;
+        }
+        hideCountdown();
+        el.answerInput.disabled = false;
+        onDone();
+      }, 1000);
+    }
+
+    function startAssessment() {
+      clearError();
+      var code = normalizeCode(el.teacherCode.value);
+      if (!isCodeAccepted(code)) { showError('Please check the teacher code.'); return; }
+      appState.sessionId = null;
+      var key = getAttemptKey(code);
+      var existing = appState.attempts[key];
+      if (existing && existing.status === 'completed') {
+        showError('This code has already been used on this device. Ask your teacher for a new code.');
+        return;
+      }
+      var restartCount = 0;
+      if (existing && existing.status === 'in_progress') restartCount = (existing.restartCount || 0) + 1;
+      appState.finishing = false;
+      appState.currentQuestion = null;
+      appState.session = {
+        id: 'ffc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
+        appVersion: APP_VERSION,
+        studentName: normalizeName(el.studentName.value) || 'Student',
+        code: code,
+        assessmentName: appState.config.assessmentName,
+        attemptKey: key,
+        restartCount: restartCount,
+        startedAt: new Date().toISOString(),
+        startMs: Date.now(),
+        startingBand: 'Warm-up -> Band A',
+        phase: 'warmup',
+        currentBandIndex: -1,
+        currentBandId: 'Warm-up',
+        blockHadExtras: false,
+        blockQueue: shuffle(WARMUP),
+        retestQueue: [],
+        retestFamilyState: {},
+        retestCountInBand: 0,
+        questionResults: [],
+        bandResults: [],
+        passedBandIds: [],
+        failedBandIds: [],
+        latestVerdict: '',
+        finalReason: '',
+        fastTrack: false,
+        currentBlockMode: 'standard'
+      };
+      appState.attempts[key] = { status: 'in_progress', restartCount: restartCount, startedAt: appState.session.startedAt };
+      saveJson(ATTEMPTS_KEY, appState.attempts);
+      el.testStudentLabel.textContent = normalizeName(el.studentName.value) || 'Student';
+      showScreen('testScreen');
+      renderBandTrack();
+      runCountdown(function () { presentNextQuestion(); });
+    }
+
+    function renderBandTrack() {
+      var html = '';
+      var session = appState.session;
+      for (var i = 0; i < BANDS.length; i++) {
+        var cls = 'band-dot';
+        if (session) {
+          if (session.currentBandIndex === i) cls += ' current';
+          if (session.passedBandIds.indexOf(BANDS[i].id) !== -1) cls += ' passed';
+          if (session.failedBandIds.indexOf(BANDS[i].id) !== -1) cls += ' failed';
+        }
+        html += '<span class="' + cls + '"></span>';
+      }
+      el.bandTrack.innerHTML = html;
+    }
+
+    function clearAnswerTimers() {
+      if (appState.idleSubmitId) {
+        window.clearTimeout(appState.idleSubmitId);
+        appState.idleSubmitId = null;
+      }
+      if (appState.autoSubmitId) {
+        window.clearTimeout(appState.autoSubmitId);
+        appState.autoSubmitId = null;
+      }
+    }
+
+    function clearQuestionTimers() {
+      clearAnswerTimers();
+      if (appState.questionTimerId) {
+        window.clearTimeout(appState.questionTimerId);
+        appState.questionTimerId = null;
+      }
+      if (appState.nextQuestionId) {
+        window.clearTimeout(appState.nextQuestionId);
+        appState.nextQuestionId = null;
+      }
+      if (appState.timerIntervalId) {
+        window.clearInterval(appState.timerIntervalId);
+        appState.timerIntervalId = null;
+      }
+      hideCountdown();
+    }
+
+    function shouldFinishForLimits() {
+      var s = appState.session;
+      if (!s) return false;
+      if (s.questionResults.length >= MAX_QUESTIONS) return true;
+      if ((Date.now() - s.startMs) / 1000 >= MAX_TEST_SEC && s.questionResults.length >= MIN_QUESTIONS) return true;
+      return false;
+    }
+
+    function presentNextQuestion() {
+      var s = appState.session;
+      if (!s || appState.finishing) return;
+      clearQuestionTimers();
+      appState.inputLocked = false;
+      el.answerInput.value = '';
+      el.answerInput.className = 'answer-input';
+      setStatus('', '');
+      if (s.blockQueue.length === 0) {
+        completeCurrentBlock();
+        return;
+      }
+      if (shouldFinishForLimits()) {
+        finishAssessment('Question or time limit reached.');
+        return;
+      }
+      var dueRetest = getDueRetest();
+      var q = dueRetest || s.blockQueue.shift();
+      appState.currentQuestion = q;
+      appState.questionStartedAt = Date.now();
+      el.problemText.textContent = q.display;
+      el.qNumber.textContent = String(s.questionResults.length + 1);
+      el.qTotal.textContent = ' of up to ' + MAX_QUESTIONS;
+      startQuestionTimer();
+    }
+
+    function getDueRetest() {
+      var s = appState.session;
+      if (!s || !s.retestQueue.length) return null;
+      for (var i = 0; i < s.retestQueue.length; i++) {
+        if (s.questionResults.length >= s.retestQueue[i].dueAfter) {
+          var item = s.retestQueue.splice(i, 1)[0];
+          if (s.retestFamilyState) s.retestFamilyState[item.fact.familyKey] = 'served';
+          var fact = reverseFact(item.fact);
+          fact.isRetest = true;
+          return fact;
+        }
+      }
+      return null;
+    }
+
+    function startQuestionTimer() {
+      var start = Date.now();
+      appState.questionTimerId = window.setTimeout(function () { handleTimeout(); }, TIMEOUT_SEC * 1000);
+      appState.timerIntervalId = window.setInterval(function () {
+        var elapsed = (Date.now() - start) / 1000;
+        var remaining = Math.max(0, TIMEOUT_SEC - elapsed);
+        var pct = Math.max(0, Math.min(100, (remaining / TIMEOUT_SEC) * 100));
+        el.timerFill.style.width = pct + '%';
+        el.timerFill.classList.toggle('warn', remaining <= 4 && remaining > 2);
+        el.timerFill.classList.toggle('danger', remaining <= 2);
+      }, 100);
+      el.timerFill.style.width = '100%';
+      el.timerFill.className = 'timer-fill';
+    }
+
+    function handleTimeout() {
+      if (appState.inputLocked || !appState.currentQuestion) return;
+      submitAnswer(true);
+    }
+
+    function setStatus(text, kind) {
+      el.statusLine.textContent = text || '';
+      el.statusLine.className = 'status-line' + (kind ? ' ' + kind : '');
+    }
+
+    function handleKey(value) {
+      if (!appState.session || appState.inputLocked || !appState.currentQuestion) return;
+      var current = el.answerInput.value;
+      if (value === 'clear') {
+        el.answerInput.value = '';
+        clearAnswerTimers();
+        return;
+      }
+      if (value === 'backspace') {
+        el.answerInput.value = current.slice(0, -1);
+        clearAnswerTimers();
+        scheduleAutoSubmit();
+        return;
+      }
+      if (!/^[0-9]$/.test(value)) return;
+      var correctLength = String(appState.currentQuestion.answer).length;
+      if (current.length >= Math.max(3, correctLength)) return;
+      el.answerInput.value = current + value;
+      scheduleAutoSubmit();
+    }
+
+    function scheduleAutoSubmit() {
+      clearAnswerTimers();
+      if (!appState.currentQuestion || appState.inputLocked) return;
+      var input = el.answerInput.value;
+      if (!input) return;
+      var correct = String(appState.currentQuestion.answer);
+      if (input.length >= correct.length) {
+        appState.autoSubmitId = window.setTimeout(function () {
+          appState.autoSubmitId = null;
+          if (!appState.inputLocked && el.answerInput.value) submitAnswer(false);
+        }, AUTO_SUBMIT_MS);
+        return;
+      }
+      if (correct.indexOf(input) !== 0) {
+        var delay = correct.length >= 3 ? IDLE_SUBMIT_LONG_MS : IDLE_SUBMIT_SHORT_MS;
+        appState.idleSubmitId = window.setTimeout(function () {
+          appState.idleSubmitId = null;
+          if (!appState.inputLocked && el.answerInput.value) submitAnswer(false);
+        }, delay);
+      }
+    }
+
+    function shouldQueueRetest(session, question) {
+      if (!session || !question) return false;
+      if (session.phase !== 'band') return false;
+      if (question.isRetest) return false;
+      if (!session.retestFamilyState) session.retestFamilyState = {};
+      if (!session.retestCountInBand) session.retestCountInBand = 0;
+      if (session.retestFamilyState[question.familyKey]) return false;
+      if (session.retestCountInBand >= MAX_RETESTS_PER_BAND) return false;
+      return true;
+    }
+
+    function shouldEndCurrentBandEarly() {
+      var s = appState.session;
+      if (!s || s.phase !== 'band' || s.currentBandIndex < 0) return false;
+      var answers = getCurrentBandAnswers();
+      if (answers.length < EARLY_FAIL_MIN_BAND_ANSWERS) return false;
+      var correct = 0;
+      var timeout = 0;
+      var insecure = 0;
+      for (var i = 0; i < answers.length; i++) {
+        if (answers[i].correct) correct++;
+        if (answers[i].timeout) timeout++;
+        if (!answers[i].correct || answers[i].timeout) insecure++;
+      }
+      if (correct <= 2) return true;
+      if (timeout >= 3) return true;
+      if (insecure >= 5 && countRepeatedWeakness(answers) >= 2) return true;
+      return false;
+    }
+
+    function failCurrentBandEarly(reason) {
+      var s = appState.session;
+      if (!s || appState.finishing) return;
+      if (s.phase !== 'band' || s.currentBandIndex < 0) {
+        finishAssessment(reason || 'Enough evidence gathered.');
+        return;
+      }
+      var band = BANDS[s.currentBandIndex];
+      var answers = getCurrentBandAnswers();
+      s.blockQueue = [];
+      s.retestQueue = [];
+      s.bandResults.push(makeBandSummary(band, answers, 'fail'));
+      s.latestVerdict = 'fail';
+      if (s.failedBandIds.indexOf(band.id) === -1) s.failedBandIds.push(band.id);
+      renderBandTrack();
+      finishAssessment(reason || 'Enough evidence gathered.');
+    }
+
+    function submitAnswer(wasTimeout) {
+      var s = appState.session;
+      var q = appState.currentQuestion;
+      if (!s || !q || appState.inputLocked || appState.finishing) return;
+      appState.inputLocked = true;
+      clearQuestionTimers();
+      var raw = String(el.answerInput.value || '');
+      var responseTimeMs = Date.now() - appState.questionStartedAt;
+      var correct = !wasTimeout && raw !== '' && parseInt(raw, 10) === q.answer;
+      var category = 'not_secure';
+      if (correct && responseTimeMs < FLUENT_MS) category = 'fluent';
+      else if (correct && responseTimeMs <= SLOW_MS) category = 'known_slow';
+      else if (correct) category = 'not_fluent';
+      var result = {
+        questionNumber: s.questionResults.length + 1,
+        phase: s.phase,
+        bandId: s.currentBandId,
+        fact: q.display,
+        familyKey: q.familyKey,
+        answer: q.answer,
+        response: wasTimeout ? '' : raw,
+        correct: correct,
+        timeout: !!wasTimeout,
+        responseTimeMs: responseTimeMs,
+        category: category,
+        reversed: q.a > q.b,
+        retest: !!q.isRetest
+      };
+      s.questionResults.push(result);
+      if ((!correct || wasTimeout) && shouldQueueRetest(s, q)) {
+        s.retestFamilyState[q.familyKey] = 'pending';
+        s.retestCountInBand += 1;
+        s.retestQueue.push({ fact: cloneFact(q), dueAfter: s.questionResults.length + 2 });
+      }
+      if (wasTimeout) {
+        el.answerInput.value = String(q.answer);
+        el.answerInput.classList.add('warn');
+        setStatus('Time is up. The answer is ' + q.answer + '.', 'warn');
+      } else if (correct) {
+        el.answerInput.classList.add('good');
+      } else {
+        el.answerInput.classList.add('bad');
+      }
+      var nextDelay = wasTimeout ? 700 : 280;
+      if (shouldEndCurrentBandEarly()) {
+        setStatus('Enough evidence gathered.', 'warn');
+        appState.nextQuestionId = window.setTimeout(function () { failCurrentBandEarly('Enough evidence gathered.'); }, nextDelay);
+        return;
+      }
+      appState.nextQuestionId = window.setTimeout(function () { presentNextQuestion(); }, nextDelay);
+    }
+
+    function completeCurrentBlock() {
+      var s = appState.session;
+      if (!s || appState.finishing) return;
+      if (s.phase === 'warmup') {
+        if (isWarmupFastTrackReady()) {
+          s.fastTrack = true;
+          var warmSummary = makeWarmupBandASummary();
+          s.bandResults.push(warmSummary);
+          s.latestVerdict = 'pass';
+          if (s.passedBandIds.indexOf('A') === -1) s.passedBandIds.push('A');
+          renderBandTrack();
+          beginBand(1);
+          return;
+        }
+        beginBand(0);
+        return;
+      }
+      var band = BANDS[s.currentBandIndex];
+      var answers = getCurrentBandAnswers();
+      var verdict = evaluateBandAnswers(answers, s.blockHadExtras, band);
+      if (verdict === 'extra') {
+        var extraNeeded = band.extraSize;
+        if (!hasQuestionBudget(extraNeeded)) {
+          finishAssessment('Question limit reached before extra questions.');
+          return;
+        }
+        s.blockHadExtras = true;
+        s.currentBlockMode = 'extra';
+        s.blockQueue = selectBandQuestions(band, extraNeeded, true);
+        setStatus('A few more questions.', 'warn');
+        appState.nextQuestionId = window.setTimeout(function () { presentNextQuestion(); }, 400);
+        return;
+      }
+      var summary = makeBandSummary(band, answers, verdict);
+      s.bandResults.push(summary);
+      s.latestVerdict = verdict;
+      if (verdict === 'pass') {
+        if (s.passedBandIds.indexOf(band.id) === -1) s.passedBandIds.push(band.id);
+        if (s.currentBandIndex >= BANDS.length - 1) {
+          finishAssessment('Completed all bands.');
+          return;
+        }
+        beginBand(s.currentBandIndex + 1);
+        return;
+      }
+      if (s.failedBandIds.indexOf(band.id) === -1) s.failedBandIds.push(band.id);
+      finishAssessment('Enough evidence gathered.');
+    }
+
+    function getWarmupAnswers() {
+      var s = appState.session;
+      var answers = [];
+      if (!s) return answers;
+      for (var i = 0; i < s.questionResults.length; i++) {
+        if (s.questionResults[i].phase === 'warmup') answers.push(s.questionResults[i]);
+      }
+      return answers;
+    }
+
+    function isWarmupFastTrackReady() {
+      var answers = getWarmupAnswers();
+      if (answers.length < WARMUP.length) return false;
+      var correct = 0;
+      var fluent = 0;
+      var timeout = 0;
+      for (var i = 0; i < answers.length; i++) {
+        if (answers[i].correct) correct++;
+        if (answers[i].category === 'fluent') fluent++;
+        if (answers[i].timeout) timeout++;
+      }
+      return correct === answers.length && fluent >= answers.length - 1 && timeout === 0;
+    }
+
+    function makeWarmupBandASummary() {
+      var answers = getWarmupAnswers();
+      var summary = makeBandSummary(BANDS[0], answers, 'pass');
+      summary.label = BANDS[0].label + ' (verified from warm-up)';
+      summary.fastTrack = true;
+      return summary;
+    }
+
+    function hasQuestionBudget(count) {
+      var s = appState.session;
+      if (!s) return false;
+      return (MAX_QUESTIONS - s.questionResults.length) >= count;
+    }
+
+    function getInitialBlockSize(index) {
+      var s = appState.session;
+      var band = BANDS[index];
+      if (!band) return 0;
+      if (band.id === 'H') return band.blockSize;
+      if (s && s.fastTrack && index > 0) return FAST_TRACK_BLOCK_SIZE;
+      return band.blockSize;
+    }
+
+    function beginBand(index) {
+      var s = appState.session;
+      if (!s || appState.finishing) return;
+      if (index < 0 || index >= BANDS.length) { finishAssessment('Completed all bands.'); return; }
+      var band = BANDS[index];
+      var blockSize = getInitialBlockSize(index);
+      if (!hasQuestionBudget(blockSize)) {
+        finishAssessment('Question limit reached before the next full band could begin.');
+        return;
+      }
+      s.phase = 'band';
+      s.currentBandIndex = index;
+      s.currentBandId = band.id;
+      s.blockHadExtras = false;
+      s.currentBlockMode = (s.fastTrack && index > 0 && band.id !== 'H') ? 'gateway' : 'standard';
+      s.retestQueue = [];
+      s.retestFamilyState = {};
+      s.retestCountInBand = 0;
+      s.blockQueue = selectBandQuestions(band, blockSize, false);
+      renderBandTrack();
+      presentNextQuestion();
+    }
+
+    function getCurrentBandAnswers() {
+      var s = appState.session;
+      var answers = [];
+      for (var i = 0; i < s.questionResults.length; i++) {
+        if (s.questionResults[i].phase === 'band' && s.questionResults[i].bandId === s.currentBandId) answers.push(s.questionResults[i]);
+      }
+      return answers;
+    }
+
+    function countRepeatedWeakness(answers) {
+      var counts = {};
+      var repeated = 0;
+      for (var i = 0; i < answers.length; i++) {
+        if (!answers[i].correct || answers[i].timeout) {
+          counts[answers[i].familyKey] = (counts[answers[i].familyKey] || 0) + 1;
+        }
+      }
+      for (var key in counts) {
+        if (Object.prototype.hasOwnProperty.call(counts, key) && counts[key] >= 2) repeated++;
+      }
+      return repeated;
+    }
+
+    function evaluateBandAnswers(answers, hadExtras, band) {
+      var s = appState.session;
+      var n = answers.length;
+      var correct = 0;
+      var fluent = 0;
+      var timeout = 0;
+      var slowOrNotFluent = 0;
+      for (var i = 0; i < answers.length; i++) {
+        if (answers[i].correct) correct++;
+        if (answers[i].category === 'fluent') fluent++;
+        if (answers[i].timeout) timeout++;
+        if (answers[i].category === 'known_slow' || answers[i].category === 'not_fluent') slowOrNotFluent++;
+      }
+      var repeatedWeakness = countRepeatedWeakness(answers);
+      if (band.id === 'H') {
+        if (correct >= Math.ceil(n * 0.85) && fluent >= Math.ceil(n * 0.66) && timeout <= 2 && repeatedWeakness < 2) return 'pass';
+        return 'fail';
+      }
+      if (s && s.fastTrack && s.currentBlockMode === 'gateway' && !hadExtras && n <= FAST_TRACK_BLOCK_SIZE) {
+        if (correct === n && fluent >= n - 1 && timeout === 0 && repeatedWeakness === 0) return 'pass';
+        if (correct >= n - 1 && timeout <= 1 && repeatedWeakness < 2) return 'extra';
+        return 'fail';
+      }
+      if (!hadExtras) {
+        if (correct >= 7 && fluent >= 5 && timeout <= 1 && repeatedWeakness < 2) return 'pass';
+        if (correct <= 4 || timeout >= 3 || repeatedWeakness >= 2) return 'fail';
+        return 'extra';
+      }
+      if (correct >= Math.ceil(n * 0.83) && fluent >= Math.ceil(n * 0.55) && timeout <= 2 && repeatedWeakness < 2 && slowOrNotFluent <= Math.ceil(n * 0.45)) return 'pass';
+      return 'fail';
+    }
+
+    function makeBandSummary(band, answers, verdict) {
+      var correct = 0;
+      var fluent = 0;
+      var timeout = 0;
+      var wrong = 0;
+      var slow = 0;
+      for (var i = 0; i < answers.length; i++) {
+        if (answers[i].correct) correct++;
+        if (answers[i].category === 'fluent') fluent++;
+        if (answers[i].timeout) timeout++;
+        if (!answers[i].correct && !answers[i].timeout) wrong++;
+        if (answers[i].category === 'known_slow' || answers[i].category === 'not_fluent') slow++;
+      }
+      return {
+        bandId: band.id,
+        label: band.label,
+        questions: answers.length,
+        correct: correct,
+        fluent: fluent,
+        slow: slow,
+        wrong: wrong,
+        timeout: timeout,
+        repeatedWeakness: countRepeatedWeakness(answers),
+        verdict: verdict
+      };
+    }
+
+    function finishAssessment(reason) {
+      var s = appState.session;
+      if (!s || appState.finishing) return;
+      appState.finishing = true;
+      clearQuestionTimers();
+      s.finalReason = reason;
+      s.completedAt = new Date().toISOString();
+      s.durationSec = Math.round((Date.now() - s.startMs) / 1000);
+      var result = buildFinalResult(s);
+      appState.latestResult = result;
+      appState.results.unshift(result);
+      saveJson(RESULTS_KEY, appState.results);
+      appState.attempts[s.attemptKey] = { status: 'completed', restartCount: s.restartCount, completedAt: result.completedAt };
+      saveJson(ATTEMPTS_KEY, appState.attempts);
+      appState.session = null;
+      appState.currentQuestion = null;
+      renderResult(result);
+      renderHistory();
+      showScreen('resultScreen');
+    }
+
+    function buildFinalResult(s) {
+      var q = s.questionResults;
+      var total = q.length;
+      var correct = 0;
+      var fluent = 0;
+      var slow = 0;
+      var wrong = 0;
+      var timeout = 0;
+      var missed = {};
+      var timedOut = {};
+      for (var i = 0; i < q.length; i++) {
+        if (q[i].correct) correct++;
+        if (q[i].category === 'fluent') fluent++;
+        if (q[i].category === 'known_slow' || q[i].category === 'not_fluent') slow++;
+        if (!q[i].correct && !q[i].timeout) { wrong++; missed[q[i].familyKey] = q[i].fact; }
+        if (q[i].timeout) { timeout++; timedOut[q[i].familyKey] = q[i].fact; missed[q[i].familyKey] = q[i].fact; }
+      }
+      var verifiedIndex = -1;
+      for (i = 0; i < s.bandResults.length; i++) {
+        if (s.bandResults[i].verdict === 'pass') verifiedIndex = getBandIndex(s.bandResults[i].bandId);
+      }
+      var developingIndex = Math.max(0, Math.min(BANDS.length - 1, verifiedIndex + 1));
+      if (s.bandResults.length) {
+        var lastBand = s.bandResults[s.bandResults.length - 1];
+        if (lastBand.verdict !== 'pass') developingIndex = getBandIndex(lastBand.bandId);
+      }
+      var result = {
+        appVersion: APP_VERSION,
+        studentName: s.studentName,
+        code: s.code,
+        assessmentName: s.assessmentName,
+        startedAt: s.startedAt,
+        completedAt: s.completedAt,
+        durationSec: s.durationSec,
+        startingBand: s.startingBand,
+        highestAttemptedBand: s.currentBandId,
+        verifiedBandIndex: verifiedIndex,
+        verifiedBand: verifiedIndex >= 0 ? BANDS[verifiedIndex].id : 'None yet',
+        verifiedLabel: verifiedIndex >= 0 ? BANDS[verifiedIndex].label : 'Not yet secure with Band A',
+        developingBand: developingIndex >= 0 ? BANDS[developingIndex].id : 'A',
+        developingLabel: developingIndex >= 0 ? BANDS[developingIndex].label : BANDS[0].label,
+        totalQuestions: total,
+        correct: correct,
+        accuracy: total ? Math.round((correct / total) * 100) : 0,
+        fluent: fluent,
+        slow: slow,
+        wrong: wrong,
+        timeout: timeout,
+        missedFacts: objectValues(missed),
+        timedOutFacts: objectValues(timedOut),
+        restartCount: s.restartCount,
+        restarted: s.restartCount > 0,
+        finalReason: s.finalReason,
+        recommendedPractice: makeRecommendation(verifiedIndex, developingIndex, objectValues(missed)),
+        bandResults: s.bandResults,
+        questionResults: q
+      };
+      return result;
+    }
+
+    function objectValues(obj) {
+      var values = [];
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) values.push(obj[key]);
+      }
+      values.sort();
+      return values;
+    }
+
+    function makeRecommendation(verifiedIndex, developingIndex, missedFacts) {
+      if (verifiedIndex >= BANDS.length - 1) {
+        if (missedFacts.length) return 'Ready for mixed multiplication practice. Review: ' + missedFacts.slice(0, 6).join(', ') + '.';
+        return 'Ready for mixed multiplication and extension work.';
+      }
+      var focus = BANDS[Math.max(0, developingIndex)] || BANDS[0];
+      if (missedFacts.length) return 'Next focus: ' + focus.label + '. Review these facts first: ' + missedFacts.slice(0, 8).join(', ') + '.';
+      return 'Next focus: ' + focus.label + '. Use regular FactFlow practice before the next check.';
+    }
+
+    function renderResult(result) {
+      el.resultMeta.textContent = result.studentName + ' — ' + result.code + ' — ' + formatDate(result.completedAt);
+      el.verifiedLevel.textContent = result.verifiedBand;
+      el.verifiedDesc.textContent = result.verifiedLabel;
+      el.developingLevel.textContent = result.developingBand;
+      el.developingDesc.textContent = result.developingLabel;
+      el.accuracyStat.textContent = result.correct + '/' + result.totalQuestions + ' (' + result.accuracy + '%)';
+      el.fluentStat.textContent = String(result.fluent);
+      el.slowStat.textContent = String(result.slow);
+      el.missedStat.textContent = String(result.wrong + result.timeout);
+      el.recommendationText.textContent = result.recommendedPractice;
+      renderTags(el.missedTags, result.missedFacts, 'bad', 'No missed facts recorded.');
+      renderTags(el.timeoutTags, result.timedOutFacts, 'warn', 'No timeouts recorded.');
+      renderBandSummary(result.bandResults);
+    }
+
+    function renderTags(container, items, cls, emptyText) {
+      if (!items || !items.length) {
+        container.innerHTML = '<span class="muted small">' + escapeHtml(emptyText) + '</span>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < items.length; i++) html += '<span class="tag ' + cls + '">' + escapeHtml(items[i]) + '</span>';
+      container.innerHTML = html;
+    }
+
+    function renderBandSummary(bands) {
+      if (!bands || !bands.length) {
+        el.bandSummary.innerHTML = '<p class="muted">No band summary recorded.</p>';
+        return;
+      }
+      var html = '<table><thead><tr><th>Band</th><th>Score</th><th>Fluent</th><th>Timeout</th><th>Verdict</th></tr></thead><tbody>';
+      for (var i = 0; i < bands.length; i++) {
+        html += '<tr><td>' + escapeHtml(bands[i].bandId + ' - ' + bands[i].label) + '</td><td>' + bands[i].correct + '/' + bands[i].questions + '</td><td>' + bands[i].fluent + '</td><td>' + bands[i].timeout + '</td><td>' + (bands[i].verdict === 'pass' ? 'Passed' : 'Developing') + '</td></tr>';
+      }
+      html += '</tbody></table>';
+      el.bandSummary.innerHTML = html;
+    }
+
+    function formatDate(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso || '');
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    }
+
+    function formatDuration(sec) {
+      var m = Math.floor(sec / 60);
+      var s = sec % 60;
+      if (m <= 0) return s + ' sec';
+      return m + ' min ' + s + ' sec';
+    }
+
+    function copySummary() {
+      var r = appState.latestResult;
+      if (!r) return;
+      var lines = [];
+      lines.push('FactFlow Check Beta Result');
+      lines.push('Student: ' + r.studentName);
+      lines.push('Assessment: ' + r.assessmentName);
+      lines.push('Code: ' + r.code);
+      lines.push('Date: ' + formatDate(r.completedAt));
+      lines.push('Verified level: ' + r.verifiedBand + ' - ' + r.verifiedLabel);
+      lines.push('Developing level: ' + r.developingBand + ' - ' + r.developingLabel);
+      lines.push('Accuracy: ' + r.correct + '/' + r.totalQuestions + ' (' + r.accuracy + '%)');
+      lines.push('Fluent: ' + r.fluent);
+      lines.push('Slow/not fluent: ' + r.slow);
+      lines.push('Missed/timeouts: ' + (r.wrong + r.timeout));
+      lines.push('Missed facts: ' + (r.missedFacts.length ? r.missedFacts.join(', ') : 'None'));
+      lines.push('Recommendation: ' + r.recommendedPractice);
+      lines.push('Restarted: ' + (r.restarted ? 'Yes (' + r.restartCount + ')' : 'No'));
+      copyText(lines.join('\n'));
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { showToast('Summary copied.'); }, function () { fallbackCopy(text); });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showToast('Summary copied.'); } catch (e) { showToast('Copy failed.'); }
+      document.body.removeChild(ta);
+    }
+
+    function renderHistory() {
+      var results = appState.results || [];
+      if (!results.length) {
+        el.historyTable.innerHTML = '<tbody><tr><td class="muted">No saved results yet.</td></tr></tbody>';
+        return;
+      }
+      var html = '<thead><tr><th>Date</th><th>Student</th><th>Code</th><th>Verified</th><th>Developing</th><th>Accuracy</th><th>Q</th><th>Restart</th></tr></thead><tbody>';
+      for (var i = 0; i < results.length; i++) {
+        var r = results[i];
+        html += '<tr><td>' + escapeHtml(formatDate(r.completedAt)) + '</td><td>' + escapeHtml(r.studentName || 'Student') + '</td><td>' + escapeHtml(r.code) + '</td><td>' + escapeHtml(r.verifiedBand) + '</td><td>' + escapeHtml(r.developingBand) + '</td><td>' + r.accuracy + '%</td><td>' + r.totalQuestions + '</td><td>' + (r.restarted ? 'Yes' : 'No') + '</td></tr>';
+      }
+      html += '</tbody>';
+      el.historyTable.innerHTML = html;
+    }
+
+    function clearSavedResults() {
+      if (!window.confirm('Clear all saved FactFlow Check results and attempt locks on this device?')) return;
+      appState.results = [];
+      appState.attempts = {};
+      saveJson(RESULTS_KEY, appState.results);
+      saveJson(ATTEMPTS_KEY, appState.attempts);
+      renderHistory();
+      showToast('Results cleared.');
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+    }
+
+    function normalizeName(name) {
+      return String(name || '').trim().replace(/\s+/g, ' ').split(' ').map(function (w) {
+        return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      }).join(' ');
+    }
+
+    function sendResults() {
+      var r = appState.latestResult;
+      if (!r) { showToast('No result to send.'); return; }
+      var url = (appState.config && appState.config.submitUrl) ? appState.config.submitUrl.trim() : '';
+      if (!url) {
+        copySummary();
+        showToast('No submit URL configured. Results copied instead.');
+        return;
+      }
+      el.submitResultBtn.disabled = true;
+      el.submitSpinner.classList.remove('hidden');
+      var payload = {
+        appVersion: r.appVersion,
+        studentName: r.studentName,
+        code: r.code,
+        assessmentName: r.assessmentName,
+        completedAt: r.completedAt,
+        durationSec: r.durationSec,
+        verifiedBand: r.verifiedBand,
+        verifiedLabel: r.verifiedLabel,
+        developingBand: r.developingBand,
+        developingLabel: r.developingLabel,
+        totalQuestions: r.totalQuestions,
+        correct: r.correct,
+        accuracy: r.accuracy,
+        fluent: r.fluent,
+        slow: r.slow,
+        wrong: r.wrong,
+        timeout: r.timeout,
+        missedFacts: r.missedFacts,
+        timedOutFacts: r.timedOutFacts,
+        restarted: r.restarted,
+        restartCount: r.restartCount,
+        finalReason: r.finalReason
+      };
+      fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      }).then(function () {
+        showToast('Results sent.');
+      }).catch(function () {
+        copySummary();
+        showToast('Could not reach server. Results copied instead.');
+      }).then(function () {
+        el.submitResultBtn.disabled = false;
+        el.submitSpinner.classList.add('hidden');
+      });
+    }
+
+    function bindEvents() {
+      el.teacherBtn.addEventListener('click', function () {
+        if (appState.teacherUnlocked) { saveConfig(); lockTeacherArea(); }
+        else { requireTeacherAccess('teacherScreen'); }
+      });
+      el.beginBtn.addEventListener('click', startAssessment);
+      el.showTeacherResultBtn.addEventListener('click', function () { if (appState.latestResult) { renderResult(appState.latestResult); showScreen('resultScreen'); } });
+      el.studentViewBtn.addEventListener('click', function () { resetEntryForNewCheck(); });
+      el.submitResultBtn.addEventListener('click', sendResults);
+      el.cancelTeacherUnlockBtn.addEventListener('click', closeTeacherUnlock);
+      el.unlockTeacherBtn.addEventListener('click', verifyTeacherPassphrase);
+      el.teacherPassphrase.addEventListener('keydown', function (evt) {
+        if (evt.key === 'Enter') { evt.preventDefault(); verifyTeacherPassphrase(); }
+        else if (evt.key === 'Escape') { evt.preventDefault(); closeTeacherUnlock(); }
+      });
+      el.generateCodeBtn.addEventListener('click', function () { el.customCode.value = makeRandomCode(); saveConfig(); });
+      el.clearResultsBtn.addEventListener('click', clearSavedResults);
+      var keys = document.querySelectorAll('.key-btn');
+      for (var i = 0; i < keys.length; i++) {
+        keys[i].addEventListener('click', function () { handleKey(this.getAttribute('data-key')); });
+      }
+      document.addEventListener('keydown', function (evt) {
+        if (evt.key === 'Enter' && !appState.session && el.entryScreen.classList.contains('active')) {
+          evt.preventDefault();
+          el.beginBtn.click();
+          return;
+        }
+        if (!appState.session) return;
+        if (/^[0-9]$/.test(evt.key)) { evt.preventDefault(); handleKey(evt.key); }
+        else if (evt.key === 'Backspace') { evt.preventDefault(); handleKey('backspace'); }
+        else if (evt.key === 'Delete' || evt.key === 'Escape') { evt.preventDefault(); handleKey('clear'); }
+      });
+      el.teacherCode.addEventListener('input', function () { el.teacherCode.value = normalizeCode(el.teacherCode.value); clearError(); });
+      window.addEventListener('storage', handleStorageEvent);
+      window.addEventListener('beforeunload', function () {
+        if (appState.session && !appState.finishing) {
+          appState.attempts[appState.session.attemptKey] = { status: 'in_progress', restartCount: appState.session.restartCount, startedAt: appState.session.startedAt };
+          saveJson(ATTEMPTS_KEY, appState.attempts);
+        }
+      });
+    }
+
+    function makeRandomCode() {
+      var words = ['RIVER','MAPLE','NORTH','BRAVE','CLOUD','TIGER','LEAF','STAR','FACT','READY','MANGO','EAGLE','STORM','FLAME','STONE','CREEK','LIGHT','SHINE','OCEAN','PEARL','BLOOM','PLAIN','SWIFT','CROWN'];
+      var word = words[Math.floor(Math.random() * words.length)];
+      var num = Math.floor(Math.random() * 90) + 10;
+      return word + '-' + num;
+    }
+
+    function handleStorageEvent(evt) {
+      if (!evt || !evt.key) return;
+      if (appState.session) return;
+      if (evt.key === RESULTS_KEY) {
+        appState.results = loadJson(RESULTS_KEY, []);
+        renderHistory();
+      } else if (evt.key === ATTEMPTS_KEY) {
+        appState.attempts = loadJson(ATTEMPTS_KEY, {});
+      } else if (evt.key === CONFIG_KEY) {
+        appState.config = loadConfig();
+        renderConfig();
+      }
+    }
+
+    function resetEntryForNewCheck() {
+      clearQuestionTimers();
+      appState.session = null;
+      appState.currentQuestion = null;
+      appState.finishing = false;
+      el.teacherCode.value = '';
+      clearError();
+      showScreen('entryScreen');
+    }
+
+    function init() {
+      cacheDom();
+      appState.config = loadConfig();
+      appState.results = loadJson(RESULTS_KEY, []);
+      appState.attempts = loadJson(ATTEMPTS_KEY, {});
+      renderConfig();
+      renderHistory();
+      bindEvents();
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
