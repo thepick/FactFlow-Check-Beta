@@ -305,7 +305,6 @@
           <span class="spinner hidden" id="submitSpinner"></span>
           <button class="btn secondary" type="button" id="studentViewBtn">Done</button>
         </div>
-        <div class="debug-output hidden" id="debugOutput" style="margin-top:14px;background:#1e1e1e;color:#0f0;border-radius:10px;padding:12px;font-family:monospace;font-size:0.78rem;white-space:pre-wrap;max-height:300px;overflow-y:auto;"></div>
       </div>
     </section>
 
@@ -364,14 +363,13 @@
     </div>
   </div>
   <div class="toast" id="toast" aria-live="polite"></div>
-  <iframe name="submitFrame" id="submitFrame" style="display:none;"></iframe>
 
   <script>
   (function () {
     'use strict';
 
     var APP_VERSION = '2.6.0-beta';
-    var SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbzNKMdDoRPxJNI-kt1Pq_Lqxk5NxqoAgbEccJvgyXoDUszrJjpXEBkg4VZ3X5JJXUmwrw/exec';
+    var SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbyxfuWZcw6awYBbdQQ0rVpJK39ABW-gurPxgSmyGJw9rXTLWd6wECHN1O-fYL14xkKUGw/exec';
     var RESULTS_KEY = 'factflowBeta.results.v1';
     var ATTEMPTS_KEY = 'factflowBeta.attempts.v1';
     var CONFIG_KEY = 'factflowBeta.config.v1';
@@ -391,7 +389,6 @@
     var TEACHER_PASS_HASH = '99691dcd1e9a5a4c574211307202ecd2caea10dc19f8962772935960184ff11d';
     var TEACHER_AUTO_LOCK_MS = 15 * 60 * 1000;
     var RESERVED_EXAMPLE_CODES = ['SAMPLE-00'];
-    var debugLines = [];
 
     var WARMUP = [
       makeFact(2, 4), makeFact(5, 6), makeFact(10, 7),
@@ -440,7 +437,7 @@
         'assessmentName','customCode','generateCodeBtn','dailyCodeLabel',
         'codeWindowLabel','clearResultsBtn','historyTable','teacherUnlockModal','teacherPassphrase','teacherUnlockError',
         'cancelTeacherUnlockBtn','unlockTeacherBtn','toast','countdownOverlay','countdownLabel','countdownValue',
-        'submitResultBtn','submitSpinner','debugOutput'
+        'submitResultBtn','submitSpinner'
       ];
       for (var i = 0; i < ids.length; i++) el[ids[i]] = document.getElementById(ids[i]);
     }
@@ -1403,6 +1400,7 @@
       s.durationSec = Math.round((Date.now() - s.startMs) / 1000);
       var result = buildFinalResult(s);
       appState.latestResult = result;
+      appState.resultPending = true;
       appState.results.unshift(result);
       saveJson(RESULTS_KEY, appState.results);
       appState.attempts[s.attemptKey] = { status: 'completed', restartCount: s.restartCount, completedAt: result.completedAt };
@@ -1621,25 +1619,11 @@
     }
 
     function sendResults() {
-      debugLines = [];
       var r = appState.latestResult;
       if (!r) { showToast('No result to send.'); return; }
       var url = SUBMIT_URL;
-      if (!url) {
-        copySummary();
-        showToast('No submit URL configured. Results copied instead.');
-        return;
-      }
       el.submitResultBtn.disabled = true;
       el.submitSpinner.classList.remove('hidden');
-
-      // === DEBUGGING ===
-      function debug(msg) {
-        debugLines.push(new Date().toISOString().slice(11, 19) + ' ' + msg);
-      }
-      debug('URL: ' + url);
-      debug('Origin: ' + window.location.origin);
-
       var payload = {
         appVersion: r.appVersion,
         studentName: r.studentName,
@@ -1664,42 +1648,29 @@
         restartCount: r.restartCount,
         finalReason: r.finalReason
       };
-      debug('Payload: ' + JSON.stringify(payload).length + ' chars');
-
       fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(payload)
-      }).then(function (resp) {
-        debug('HTTP ' + resp.status + ' ' + resp.statusText + ' type=' + resp.type);
-        return resp.text();
-      }).then(function (txt) {
-        debug('Response (' + txt.length + ' chars): ' + txt.slice(0, 250));
+      }).then(function (resp) { return resp.text(); })
+      .then(function (txt) {
         var data;
         try { data = JSON.parse(txt); } catch (e) { data = null; }
         if (data && data.ok) {
           showToast('Results sent.');
-          debug('SUCCESS');
+          appState.resultPending = false;
         } else {
           copySummary();
           showToast('Server error. Results copied instead.');
-          debug('FAIL: ' + (data ? JSON.stringify(data) : 'unparseable response'));
         }
-        showDebug();
-      }).catch(function (err) {
-        debug('NETWORK ERROR: ' + (err && err.message ? err.message : String(err)));
+        el.submitResultBtn.disabled = false;
+        el.submitSpinner.classList.add('hidden');
+      }).catch(function () {
         copySummary();
         showToast('Could not reach server. Results copied instead.');
-        showDebug();
-      }).then(function () {
         el.submitResultBtn.disabled = false;
         el.submitSpinner.classList.add('hidden');
       });
-    }
-
-    function showDebug() {
-      el.debugOutput.textContent = debugLines.join('\n');
-      el.debugOutput.classList.remove('hidden');
     }
 
     function bindEvents() {
@@ -1736,7 +1707,12 @@
       });
       el.teacherCode.addEventListener('input', function () { el.teacherCode.value = normalizeCode(el.teacherCode.value); clearError(); });
       window.addEventListener('storage', handleStorageEvent);
-      window.addEventListener('beforeunload', function () {
+      window.addEventListener('beforeunload', function (evt) {
+        if (appState.resultPending) {
+          evt.preventDefault();
+          evt.returnValue = 'Your results have not been sent. Press Submit to send them to your teacher.';
+          return evt.returnValue;
+        }
         if (appState.session && !appState.finishing) {
           appState.attempts[appState.session.attemptKey] = { status: 'in_progress', restartCount: appState.session.restartCount, startedAt: appState.session.startedAt };
           saveJson(ATTEMPTS_KEY, appState.attempts);
@@ -1770,6 +1746,7 @@
       appState.session = null;
       appState.currentQuestion = null;
       appState.finishing = false;
+      appState.resultPending = false;
       el.teacherCode.value = '';
       clearError();
       showScreen('entryScreen');
