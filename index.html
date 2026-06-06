@@ -320,9 +320,8 @@
           <label for="assessmentName">Assessment name</label>
           <input id="assessmentName" type="text" maxlength="60" placeholder="Example: Term 1 Multiplication Check">
         </div>
-        <div class="field">
-          <label for="submitUrl">Submit URL (Google Apps Script)</label>
-          <input id="submitUrl" type="text" maxlength="300" placeholder="https://script.google.com/macros/s/...">
+        <div class="notice">
+          <p class="small muted">Results are sent to the Google Sheets URL defined in the code. To change it, edit the <code>SUBMIT_URL</code> constant near line 371 in the HTML file.</p>
         </div>
         <div class="notice">
           <div class="row" style="justify-content:space-between;align-items:center;">
@@ -370,6 +369,7 @@
     'use strict';
 
     var APP_VERSION = '2.6.0-beta';
+    var SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbzNKMdDoRPxJNI-kt1Pq_Lqxk5NxqoAgbEccJvgyXoDUszrJjpXEBkg4VZ3X5JJXUmwrw/exec';
     var RESULTS_KEY = 'factflowBeta.results.v1';
     var ATTEMPTS_KEY = 'factflowBeta.attempts.v1';
     var CONFIG_KEY = 'factflowBeta.config.v1';
@@ -434,7 +434,7 @@
         'bandTrack','timerFill','problemText','answerInput','statusLine','showTeacherResultBtn','resultMeta',
         'verifiedLevel','verifiedDesc','developingLevel','developingDesc','accuracyStat','fluentStat','slowStat',
         'missedStat','recommendationText','missedTags','timeoutTags','bandSummary','studentViewBtn',
-        'assessmentName','customCode','generateCodeBtn','submitUrl','dailyCodeLabel',
+        'assessmentName','customCode','generateCodeBtn','dailyCodeLabel',
         'codeWindowLabel','clearResultsBtn','historyTable','teacherUnlockModal','teacherPassphrase','teacherUnlockError',
         'cancelTeacherUnlockBtn','unlockTeacherBtn','toast','countdownOverlay','countdownLabel','countdownValue',
         'submitResultBtn','submitSpinner'
@@ -539,7 +539,6 @@
       }
       if (!cfg.assessmentName) cfg.assessmentName = 'Multiplication Placement Check';
       if (!cfg.customCode) cfg.customCode = '';
-      if (!cfg.submitUrl) cfg.submitUrl = '';
       return cfg;
     }
 
@@ -552,7 +551,6 @@
         showToast('The sample code is reserved and was not saved.');
       }
       appState.config.updatedAt = new Date().toISOString();
-      appState.config.submitUrl = String(el.submitUrl.value || '').trim();
       saveJson(CONFIG_KEY, appState.config);
       renderConfig();
       showToast('Saved.');
@@ -566,7 +564,6 @@
       }
       el.assessmentName.value = appState.config.assessmentName || '';
       el.customCode.value = normalizeCode(appState.config.customCode || '');
-      el.submitUrl.value = appState.config.submitUrl || '';
       el.studentCodeHint.textContent = 'Ask your teacher for the code';
     }
 
@@ -1623,7 +1620,7 @@
     function sendResults() {
       var r = appState.latestResult;
       if (!r) { showToast('No result to send.'); return; }
-      var url = (appState.config && appState.config.submitUrl) ? appState.config.submitUrl.trim() : '';
+      var url = SUBMIT_URL;
       if (!url) {
         copySummary();
         showToast('No submit URL configured. Results copied instead.');
