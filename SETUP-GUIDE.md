@@ -1,6 +1,6 @@
-# FactFlow Check Beta — Teacher Setup Guide
+# FactFlow Check — Teacher Setup Guide
 
-## One-time setup (about 5 minutes)
+## One-time setup (about 5 minutes per teacher)
 
 ### Step 1: Create a Google Sheet
 
@@ -22,7 +22,7 @@
 1. In the Apps Script editor, click **Deploy → New Deployment**
 2. Click the gear icon ⚙️ next to "Select type" and choose **Web app**
 3. Set these values:
-   - **Description:** `FactFlow Check Beta receiver`
+   - **Description:** `FactFlow Check receiver`
    - **Execute as:** `Me` (your Google account)
    - **Who has access:** `Anyone`
 4. Click **Deploy**
@@ -33,24 +33,43 @@
    ```
 7. Click **Done**
 
-### Step 4: Add the URL to the HTML
+### Step 4: Add your URL to the TEACHERS map
 
-1. Open `index.html` in a text editor (Notepad, VS Code, or any plain-text editor)
-2. Find the line near the top that says:
+1. Give your deployment URL to the person who maintains the `index.html` file
+2. They will add an entry to the `TEACHERS` object near the top of the `<script>` section:
    ```js
-   var SUBMIT_URL = 'https://script.google.com/macros/s/.../exec';
+   'IP5/9': {
+     name: 'Ajarn Michael — IP5/9',
+     url: 'https://script.google.com/macros/s/.../exec'
+   }
    ```
-3. Replace the URL between the quotes with the URL you copied in Step 3
-4. Save the file
+3. Your teacher key (e.g. `IP5/9`) becomes the link your students use
 
-### Step 5: Upload and test
+### Step 5: Share your link and test
 
-1. Upload the updated `index.html` to your hosting (e.g., `ffcbeta.mtomlinson.ca`)
-2. Open the app, enter a student name and a valid teacher code, complete a check
+1. Your class link is `ffcbeta.mtomlinson.ca/?t=YOUR_KEY`
+2. Open the link, enter a student name and a valid teacher code, complete a check
 3. On the result screen, click **Send Results**
 4. Open your Google Sheet — you should see:
    - **Raw Data** sheet (hidden): every submission, timestamped
    - **Summary** sheet (visible): one row per student, alphabetical, showing only the latest result
+
+---
+
+## Multi-teacher setup
+
+A single hosted app at `ffcbeta.mtomlinson.ca` serves multiple teachers. Each teacher:
+
+1. Creates their own Google Sheet and deploys their own Apps Script (Steps 1–3 above)
+2. Gets an entry in the `TEACHERS` object in `index.html`
+3. Shares their unique link (`?t=KEY`) with their class
+
+| Teacher | Key | Link |
+|---------|-----|------|
+| Ajarn Michael | `IP5/9` | `ffcbeta.mtomlinson.ca/?t=IP5/9` |
+| Ajarn Jordan | `IP5/8` | `ffcbeta.mtomlinson.ca/?t=IP5/8` |
+
+The `DEFAULT_TEACHER_KEY` at the top of the script determines which teacher's sheet is used when no `?t=` parameter is present.
 
 ---
 
@@ -60,8 +79,8 @@ If you edit the Apps Script later, you must:
 
 1. Click **Deploy → New Deployment** (a new deployment, not just save)
 2. Copy the **new URL** it gives you
-3. Update the `SUBMIT_URL` in `index.html` with the new URL
-4. Re-upload `index.html`
+3. Give the new URL to the person maintaining `index.html` so they can update your entry in the `TEACHERS` object
+4. They re-upload `index.html`
 
 Each deployment gets a unique URL. The old URL stops working once a new deployment is created.
 
@@ -71,7 +90,7 @@ Each deployment gets a unique URL. The old URL stops working once a new deployme
 
 | Student clicks... | What happens |
 |---|---|
-| **Send Results** | Posts their result to your Sheet. Row appears in Summary instantly. |
+| **Send Results** | Posts their result to their teacher's Sheet. Row appears in Summary instantly. |
 | (offline / server error) | Falls back to copying results to clipboard with a toast message. |
 
 ## Sheet structure
@@ -99,4 +118,4 @@ The Apps Script may have a bug. Go to Extensions → Apps Script in your Sheet, 
 Name normalization handles case and spacing, but not typos (e.g., "Ben" vs "Bne"). Remind the student to correct their spelling — the name is remembered on their device for next time.
 
 **URL changed after redeploying:**
-If you redeploy the Apps Script, you get a new URL. You must update `SUBMIT_URL` in `index.html` and re-upload. The old URL stops working.
+If you redeploy the Apps Script, you get a new URL. Give the new URL to the person maintaining `index.html` so they can update your `TEACHERS` entry. The old URL stops working.
