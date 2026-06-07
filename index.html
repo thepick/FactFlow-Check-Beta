@@ -195,6 +195,7 @@
           <p class="muted">Answer each fact as quickly and accurately as you can. When you finish, your result will appear on the screen.</p>
           <div><span class="code-chip" id="studentCodeHint">Code required</span></div>
         </div>
+        <p class="muted small center" id="teacherBadge"><strong id="teacherBadgeName"></strong></p>
         <div class="field">
           <label for="studentName">Your name</label>
           <input id="studentName" type="text" maxlength="40" autocomplete="off" placeholder="First name">
@@ -321,7 +322,7 @@
           <input id="assessmentName" type="text" maxlength="60" placeholder="Example: Term 1 Multiplication Check">
         </div>
         <div class="notice">
-          <p class="small muted">Results are sent to the Google Sheets URL defined in the code. To change it, edit the <code>SUBMIT_URL</code> constant near line 371 in the HTML file.</p>
+          <p class="small muted">Results are sent to the Google Sheet configured for your class in the <code>TEACHERS</code> object near the top of the .html file. Each teacher shares their own link: <code>ffcbeta.mtomlinson.ca/?t=KEY</code>. See SETUP-GUIDE.md for details.</p>
         </div>
         <div class="notice">
           <div class="row" style="justify-content:space-between;align-items:center;">
@@ -365,11 +366,55 @@
   <div class="toast" id="toast" aria-live="polite"></div>
 
   <script>
+  /* ╔══════════════════════════════════════════════════════════════╗
+     ║            FACTFLOW CHECK BETA — TEACHER SETUP             ║
+     ║                                                          ║
+     ║  Each teacher needs their own Google Sheet + Apps Script. ║
+     ║  Add an entry to TEACHERS below with a short key, the     ║
+     ║  teacher's display name, and their Apps Script URL.       ║
+     ║                                                          ║
+     ║  Teachers share: ffcbeta.mtomlinson.ca/?t=KEY             ║
+     ║  Example:          ffcbeta.mtomlinson.ca/?t=IP5/9         ║
+     ║                                                          ║
+     ║  DEFAULT_TEACHER_KEY is used when the URL has no ?t=.     ║
+     ║  See SETUP-GUIDE.md for detailed instructions.           ║
+     ╚══════════════════════════════════════════════════════════════╝
+  */
+  var DEFAULT_TEACHER_KEY = 'IP5/9';
+
+  var TEACHERS = {
+    'IP5/9': {
+      name: 'Ajarn Michael — IP5/9',
+      url: 'https://script.google.com/macros/s/AKfycbxZAjDgNmpEdCohLeZ5kuCwC6J1VacejRacQn8MRIgwYVhoKaxmSexK-UdhqNXeMsX50g/exec'
+    },
+    'IP5/8': {
+      name: 'Ajarn Jordan — IP5/8',
+      url: 'https://script.google.com/macros/s/AKfycbz0Au2YhXQgyzM4b5OTSmhtKxSn2JKsGItNY_4o7vFCdN5pHuIYShHdkaQkyBERNMD9tA/exec'
+    }
+  };
+
+  // Resolve teacher from ?t= URL parameter
+  var activeTeacher = null;
+  (function () {
+    var q = window.location.search;
+    if (q) {
+      var m = q.match(/[?&]t=([^&]+)/);
+      if (m) {
+        var key = decodeURIComponent(m[1]);
+        if (TEACHERS[key]) activeTeacher = TEACHERS[key];
+      }
+    }
+    if (!activeTeacher && TEACHERS[DEFAULT_TEACHER_KEY]) {
+      activeTeacher = TEACHERS[DEFAULT_TEACHER_KEY];
+    }
+  })();
+
+  var SUBMIT_URL = activeTeacher ? activeTeacher.url : '';
+
   (function () {
     'use strict';
 
     var APP_VERSION = '2.6.0-beta';
-    var SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbyxfuWZcw6awYBbdQQ0rVpJK39ABW-gurPxgSmyGJw9rXTLWd6wECHN1O-fYL14xkKUGw/exec';
     var RESULTS_KEY = 'factflowBeta.results.v1';
     var ATTEMPTS_KEY = 'factflowBeta.attempts.v1';
     var CONFIG_KEY = 'factflowBeta.config.v1';
@@ -437,7 +482,7 @@
         'assessmentName','customCode','generateCodeBtn','dailyCodeLabel',
         'codeWindowLabel','clearResultsBtn','historyTable','teacherUnlockModal','teacherPassphrase','teacherUnlockError',
         'cancelTeacherUnlockBtn','unlockTeacherBtn','toast','countdownOverlay','countdownLabel','countdownValue',
-        'submitResultBtn','submitSpinner'
+        'submitResultBtn','submitSpinner','teacherBadge','teacherBadgeName'
       ];
       for (var i = 0; i < ids.length; i++) el[ids[i]] = document.getElementById(ids[i]);
     }
@@ -987,7 +1032,37 @@
 
     function handleTimeout() {
       if (appState.inputLocked || !appState.currentQuestion) return;
-      submitAnswer(true);
+      appState.inputLocked = true;
+      clearQuestionTimers();
+      var s = appState.session;
+      var q = appState.currentQuestion;
+      var answer = q.answer;
+      var result = {
+        questionNumber: s.questionResults.length + 1,
+        phase: s.phase,
+        bandId: s.currentBandId,
+        fact: q.display,
+        familyKey: q.familyKey,
+        answer: answer,
+        response: '',
+        correct: false,
+        timeout: true,
+        responseTimeMs: TIMEOUT_SEC * 1000,
+        category: 'not_secure',
+        reversed: q.a > q.b,
+        retest: !!q.isRetest
+      };
+      s.questionResults.push(result);
+      if (shouldQueueRetest(s, q)) {
+        s.retestFamilyState[q.familyKey] = 'pending';
+        s.retestCountInBand += 1;
+        s.retestQueue.push({ fact: cloneFact(q), dueAfter: s.questionResults.length + 2 });
+      }
+      if (shouldEndCurrentBandEarly()) {
+        appState.nextQuestionId = window.setTimeout(function () { failCurrentBandEarly('Enough evidence gathered.'); }, 120);
+        return;
+      }
+      appState.nextQuestionId = window.setTimeout(function () { presentNextQuestion(); }, 120);
     }
 
     function setStatus(text, kind) {
@@ -1025,7 +1100,7 @@
       if (input.length >= correct.length) {
         appState.autoSubmitId = window.setTimeout(function () {
           appState.autoSubmitId = null;
-          if (!appState.inputLocked && el.answerInput.value) submitAnswer(false);
+          if (!appState.inputLocked && el.answerInput.value) submitAnswer();
         }, AUTO_SUBMIT_MS);
         return;
       }
@@ -1033,7 +1108,7 @@
         var delay = correct.length >= 3 ? IDLE_SUBMIT_LONG_MS : IDLE_SUBMIT_SHORT_MS;
         appState.idleSubmitId = window.setTimeout(function () {
           appState.idleSubmitId = null;
-          if (!appState.inputLocked && el.answerInput.value) submitAnswer(false);
+          if (!appState.inputLocked && el.answerInput.value) submitAnswer();
         }, delay);
       }
     }
@@ -1086,7 +1161,7 @@
       finishAssessment(reason || 'Enough evidence gathered.');
     }
 
-    function submitAnswer(wasTimeout) {
+    function submitAnswer() {
       var s = appState.session;
       var q = appState.currentQuestion;
       if (!s || !q || appState.inputLocked || appState.finishing) return;
@@ -1094,7 +1169,7 @@
       clearQuestionTimers();
       var raw = String(el.answerInput.value || '');
       var responseTimeMs = Date.now() - appState.questionStartedAt;
-      var correct = !wasTimeout && raw !== '' && parseInt(raw, 10) === q.answer;
+      var correct = raw !== '' && parseInt(raw, 10) === q.answer;
       var category = 'not_secure';
       if (correct && responseTimeMs < FLUENT_MS) category = 'fluent';
       else if (correct && responseTimeMs <= SLOW_MS) category = 'known_slow';
@@ -1106,30 +1181,26 @@
         fact: q.display,
         familyKey: q.familyKey,
         answer: q.answer,
-        response: wasTimeout ? '' : raw,
+        response: raw,
         correct: correct,
-        timeout: !!wasTimeout,
+        timeout: false,
         responseTimeMs: responseTimeMs,
         category: category,
         reversed: q.a > q.b,
         retest: !!q.isRetest
       };
       s.questionResults.push(result);
-      if ((!correct || wasTimeout) && shouldQueueRetest(s, q)) {
+      if (!correct && shouldQueueRetest(s, q)) {
         s.retestFamilyState[q.familyKey] = 'pending';
         s.retestCountInBand += 1;
         s.retestQueue.push({ fact: cloneFact(q), dueAfter: s.questionResults.length + 2 });
       }
-      if (wasTimeout) {
-        el.answerInput.value = String(q.answer);
-        el.answerInput.classList.add('warn');
-        setStatus('Time is up. The answer is ' + q.answer + '.', 'warn');
-      } else if (correct) {
+      if (correct) {
         el.answerInput.classList.add('good');
       } else {
         el.answerInput.classList.add('bad');
       }
-      var nextDelay = wasTimeout ? 700 : 280;
+      var nextDelay = correct ? 120 : 120;
       if (shouldEndCurrentBandEarly()) {
         setStatus('Enough evidence gathered.', 'warn');
         appState.nextQuestionId = window.setTimeout(function () { failCurrentBandEarly('Enough evidence gathered.'); }, nextDelay);
@@ -1168,7 +1239,7 @@
         s.currentBlockMode = 'extra';
         s.blockQueue = selectBandQuestions(band, extraNeeded, true);
         setStatus('A few more questions.', 'warn');
-        appState.nextQuestionId = window.setTimeout(function () { presentNextQuestion(); }, 400);
+        appState.nextQuestionId = window.setTimeout(function () { presentNextQuestion(); }, 200);
         return;
       }
       var summary = makeBandSummary(band, answers, verdict);
@@ -1399,7 +1470,7 @@
         highestAttemptedBand: s.currentBandId,
         verifiedBandIndex: verifiedIndex,
         verifiedBand: verifiedIndex >= 0 ? BANDS[verifiedIndex].id : 'None yet',
-        verifiedLabel: verifiedIndex >= 0 ? BANDS[verifiedIndex].label : 'Not yet secure with Band A',
+        verifiedLabel: verifiedIndex >= 0 ? BANDS[verifiedIndex].label : 'Starting with Band A',
         developingBand: developingIndex >= 0 ? BANDS[developingIndex].id : 'A',
         developingLabel: developingIndex >= 0 ? BANDS[developingIndex].label : BANDS[0].label,
         totalQuestions: total,
@@ -1709,6 +1780,12 @@
       renderConfig();
       renderHistory();
       bindEvents();
+
+      // Show teacher badge when resolved from ?t= param or default
+      if (activeTeacher) {
+        el.teacherBadgeName.textContent = activeTeacher.name;
+        el.teacherBadge.style.display = '';
+      }
     }
 
     init();
